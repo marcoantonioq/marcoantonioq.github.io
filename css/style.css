@@ -39,7 +39,7 @@ img {
     justify-content: center;
 }
 .flex > div {
-    flex: 1 1 200px;
+    flex: 1 1 300px;
 }
 
 section.flex div:nth-child(2){ 
@@ -79,8 +79,31 @@ section.flex:not(.header) > div:nth-child(1) {
     border-radius: 50%;
 }
 
+.timeline {
+    padding-left: 25px;
+    border-left-width: 2px;
+    border-left-style: solid;
+}
+.item-timeline {
+    position: relative;
+    
+}
+.timeline-point {
+    box-shadow: 0 0 0 6px #fff;
+    background: #F8BB10;
+    height: 10px;
+    width: 10px;
+    position: absolute;
+    left: -31px;
+    top: 3px;
+    border-radius: 50%;
+}
+
 @media (max-width: 600px){
     
+    section.flex:not(.header) > div:nth-child(1) {
+        text-align: left;
+    }
     p, span {
         padding: 5px 10px;
         margin-block-start: 1em;
