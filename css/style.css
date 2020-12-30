@@ -1,44 +1,109 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 body {
-    background: #FFF;
     font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    background-color: #fff;
+    color: #939393;
+    font-weight: 400;
+    text-align: justify;
+    font-size: 1.1rem;
+    /* margin-bottom: 1.2rem; */
 }
-.cv {
-    margin: 0 auto;
-    width: 100%;
+.content {
+    padding: 5px 10px;
 }
-.row {
-    margin-bottom: 0;
+h1, h2, h3, h4, p {
+    padding: 5px 20px;
+    line-height: 1.7;
 }
-.header{
-    min-height: 300px;
+
+a {
+    color: #F8BB10;
+    text-decoration: none;
+    background-color: transparent;
 }
-.row div:nth-child(1) {
+
+img {
+    max-width: 100%;
+    max-height: 175px;
+    text-align: center;
+}
+
+.flex {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+.flex > div {
+    flex: 1 1 200px;
+}
+
+section.flex div:nth-child(2){ 
+    flex-grow: 3;
+}
+
+section.flex > div:nth-child(1) {
     background-color:#fbfbfb;
 }
-
-.cv div.row:nth-child(even) div.col:nth-child(1) {
-    background-color:#F8F8F8;
+section.flex:not(.header) > div:nth-child(1) {
+    text-align: right;
 }
 
-.name {
+.cv section.flex:nth-child(even) {
+    background-color: #FCFCFC;
+}
+
+.title {
     color:#F8BB10;
     font-weight: bold;
     text-transform: uppercase;
 }
 
+/* Class utils */
+.center {
+    text-align: center;
+    align-self: center;
+}
+.right {
+    text-align: right;
+}
+.left {
+    text-align: left;
+}
+
+.circle {
+    border-radius: 50%;
+}
+
 @media (max-width: 600px){
     
-    .row div:nth-child(1) {
+    p, span {
+        padding: 5px 10px;
+        margin-block-start: 1em;
+        margin-block-end: 1em;
+        font-size: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .cv section.flex > div:nth-child(2) {
+        background-color: #FFF !important;
+    }
+    section.flex div:nth-child(1) {
         border-top: 1px solid #ececec;
         border-bottom: 1px solid #ececec;
     }
-
-    cv div.row {
+    /* 
+    
+    cv div.flex {
         border: 0px;
         background-color:red;
     }
-
-    .row .name {
+    
+    .flex .name {
         text-align: center;
-    }
+    } */
 }
