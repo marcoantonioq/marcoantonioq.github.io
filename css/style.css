@@ -1,0 +1,44 @@
+body {
+    background: #FFF;
+    font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+.cv {
+    margin: 0 auto;
+    width: 100%;
+}
+.row {
+    margin-bottom: 0;
+}
+.header{
+    min-height: 300px;
+}
+.row div:nth-child(1) {
+    background-color:#fbfbfb;
+}
+
+.cv div.row:nth-child(even) div.col:nth-child(1) {
+    background-color:#F8F8F8;
+}
+
+.name {
+    color:#F8BB10;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+@media (max-width: 600px){
+    
+    .row div:nth-child(1) {
+        border-top: 1px solid #ececec;
+        border-bottom: 1px solid #ececec;
+    }
+
+    cv div.row {
+        border: 0px;
+        background-color:red;
+    }
+
+    .row .name {
+        text-align: center;
+    }
+}
