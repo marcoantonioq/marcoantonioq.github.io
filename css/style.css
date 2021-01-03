@@ -9,17 +9,16 @@ body {
     background-color: #fff;
     color: #939393;
     font-weight: 400;
-    text-align: justify;
     font-size: 1.1rem;
     /* margin-bottom: 1.2rem; */
 }
 
 .content {
-    padding: 5px 20px;
+    padding: 15px 20px;
 }
 
 h1, h2, h3, h4, p {
-    padding: 5px 20px;
+    padding: 20px 20px;
     line-height: 1.7;
 }
 
@@ -46,7 +45,7 @@ progress[value], progress::-webkit-progress-value {
     flex-wrap: wrap;
     justify-content: center;
 }
-.flex > div {
+.flex > div, .flex > p {
     flex: 1 1 300px;
 }
 
@@ -107,8 +106,8 @@ section.flex > div:nth-child(1) {
     border-radius: 50%;
 }
 
-@media (max-width: 600px){
-    
+@media screen and (max-width: 600px){
+
     section.flex > div:nth-child(1) {
         text-align: left;
     }
