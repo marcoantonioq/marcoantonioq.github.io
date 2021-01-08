@@ -1,3 +1,3 @@
-[Currículo: https://marcoantonioq.github.io/curriculo.html](https://marcoantonioq.github.io/curriculo.html)
+[Currículo: https://marcoantonioq.github.io](https://marcoantonioq.github.io/)
 
 
