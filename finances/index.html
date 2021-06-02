@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top" />
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <!--[if IE]><link rel="icon" href="/favicon.ico" /><![endif]-->
+    <title>google-sheet-finances</title>
+
+    <!-- Compiled and minified CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css"
+    />
+
+    <!-- Compiled and minified JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+    <!-- Compiled and minified JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+    <link
+      href="https://cdn.jsdelivr.net/gh/marcoantonioq/google-sheet-finances@0.0.2-2106012133/dist/css/app.css"
+      rel="preload"
+      as="style"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/gh/marcoantonioq/google-sheet-finances@0.0.2-2106012133/dist/js/app.js"
+      rel="preload"
+      as="script"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/gh/marcoantonioq/google-sheet-finances@0.0.2-2106012133/dist/css/app.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="https://cdn.jsdelivr.net/gh/marcoantonioq/google-sheet-finances@0.0.2-2106012133/dist/img/icons/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="https://cdn.jsdelivr.net/gh/marcoantonioq/google-sheet-finances@0.0.2-2106012133/dist/img/icons/favicon-16x16.png"
+    />
+    <link
+      rel="manifest"
+      href="https://cdn.jsdelivr.net/gh/marcoantonioq/google-sheet-finances@0.0.2-2106012133/dist/manifest.json"
+    />
+    <meta name="theme-color" content="#4DBA87" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="My Finances" />
+    <link
+      rel="apple-touch-icon"
+      href="https://cdn.jsdelivr.net/gh/marcoantonioq/google-sheet-finances@0.0.2-2106012133/dist/img/icons/apple-touch-icon-152x152.png"
+    />
+    <link
+      rel="mask-icon"
+      href="https://cdn.jsdelivr.net/gh/marcoantonioq/google-sheet-finances@0.0.2-2106012133/dist/img/icons/safari-pinned-tab.svg"
+      color="#4DBA87"
+    />
+    <meta
+      name="msapplication-TileImage"
+      content="https://cdn.jsdelivr.net/gh/marcoantonioq/google-sheet-finances@0.0.2-2106012133/dist/img/icons/msapplication-icon-144x144.png"
+    />
+    <meta name="msapplication-TileColor" content="#000000" />
+
+    <style>
+      #loading-wrapper {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-content: center;
+        position: fixed;
+        width: 100vw;
+        height: 100vh;
+        left: 0;
+        top: 0;
+      }
+
+      #loading-text {
+        color: #000;
+        text-align: center;
+        font-family: "PT Sans Narrow", sans-serif;
+        font-size: 20px;
+      }
+
+      #loading-content {
+        width: 170px;
+        height: 170px;
+      }
+
+      #loading-content {
+        border: 3px solid transparent;
+        border-top-color: #e30713;
+        border-bottom-color: #e30713;
+        border-radius: 50%;
+        animation: loader 2s linear infinite;
+        margin: 0 auto;
+        position: relative;
+        top: -100px;
+      }
+
+      @keyframes loader {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <noscript
+      ><strong
+        >We're sorry but google-sheet-finances doesn't work properly without
+        JavaScript enabled. Please enable it to continue.</strong
+      ></noscript
+    >
+    <div id="app">
+      <div id="loading-wrapper">
+        <div id="loading-text">CARREGANDO</div>
+        <div id="loading-content"></div>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/gh/marcoantonioq/google-sheet-finances@0.0.2-2106012133/dist/js/app.js"></script>
+
+    <script>
+      document.addEventListener(
+        "DOMContentLoaded",
+        () => {
+          // Click home
+          document.querySelector("nav a").click();
+
+          // document.querySelector("#warning-bar-table tr .warning-bar").remove();
+        },
+        false
+      );
+
+      // try {
+      //   google.script.run
+      //     .withSuccessHandler((dt) => console.log(dt))
+      //     .find({ table: "Banco de dados", filter: [] });
+      // } catch (e) {
+      //   console.log("Erro: ", e);
+      // }
+    </script>
+
+    <style>
+      #warning {
+        display: none !important;
+        background-color: red !important;
+      }
+    </style>
+
+    <!--Import Google Icon Font-->
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+  </body>
+</html>
