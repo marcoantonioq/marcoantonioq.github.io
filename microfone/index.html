@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
   <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Reconhecimento de fala</title>
     <style>
       body {
@@ -10,12 +12,12 @@
       }
 
       #app {
-        max-width: 600px;
+        max-width: 800px;
         margin: 0 auto;
       }
 
       button {
-        margin-left: 10px;
+        margin: 5px;
         padding: 10px 15px;
         font-size: 14px;
         background-color: #007bff;
@@ -23,6 +25,7 @@
         border: none;
         cursor: pointer;
         opacity: 0.8;
+        min-width: 150px;
       }
 
       button:hover {
@@ -66,7 +69,7 @@
       </button>
       <button class="red-1" @click="clearConversation">Apagar conversas</button>
 
-      <p>
+      <p style="margin-bottom: 20px">
         <label>Arquivo: <input type="file" @change="selectAudioFile" /></label>
       </p>
 
