@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <title>Reconhecimento de fala</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+      }
+
+      #app {
+        max-width: 600px;
+        margin: 0 auto;
+      }
+
+      button {
+        margin-left: 10px;
+        padding: 10px 15px;
+        font-size: 14px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+        opacity: 0.8;
+      }
+
+      button:hover {
+        opacity: 1;
+      }
+
+      h2 {
+        margin-top: 20px;
+      }
+
+      p {
+        margin: 10px 0;
+      }
+
+      small {
+        background-color: rgb(236, 236, 236);
+        -webkit-user-select: none;
+        user-select: none;
+        padding: 3px;
+        margin-right: 5px;
+      }
+
+      .red {
+        background-color: rgb(223, 33, 33);
+      }
+      .red-1 {
+        background-color: rgb(122, 0, 0);
+      }
+      .green {
+        background-color: green;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <button class="red" @click="toggleRecording">
+        {{ recording ? 'Parar' : 'Iniciar' }}
+      </button>
+      <button class="green" @click="downloadConversation">
+        Baixar conversas
+      </button>
+      <button class="red-1" @click="clearConversation">Apagar conversas</button>
+
+      <p>
+        <label>Arquivo: <input type="file" @change="selectAudioFile" /></label>
+      </p>
+
+      <p id="transcribedText">{{ currentTranscript }}</p>
+
+      <p v-for="([time, transcript], id) in transcriptHistory" :key="id">
+        <small>{{ time.replace(/:\d\d$/, '') }}</small>
+        {{ transcript }}
+        <br />
+      </p>
+    </div>
+
+    <script src="/vue.js"></script>
+    <script>
+      const app = Vue.createApp({
+        data() {
+          return {
+            recording: false,
+            currentTranscript: "",
+            transcriptHistory:
+              JSON.parse(localStorage.getItem("transcriptHistory")) || [],
+            recognition: null,
+            audioSource: null,
+          };
+        },
+        mounted() {
+          if ("webkitSpeechRecognition" in window) {
+            this.recognition = new webkitSpeechRecognition();
+            this.recognition.continuous = true;
+            this.recognition.interimResults = true;
+            this.recognition.language = "pt-BR";
+            this.recognition.timeout = 5000;
+            this.recognition.confidenceThreshold = 0.8;
+
+            this.recognition.onresult = (event) => {
+              let transcript = "";
+              let final = "";
+
+              for (let i = event.resultIndex; i < event.results.length; i++) {
+                const result = event.results[i][0];
+                if (event.results[i].isFinal) {
+                  final += result.transcript;
+                } else {
+                  transcript += result.transcript;
+                }
+              }
+              this.currentTranscript = transcript;
+              if (final.trim() !== "") {
+                console.log("Frase final: ", final);
+                this.transcriptHistory.unshift([
+                  new Date().toLocaleString().split(", ")[1],
+                  final.trim(),
+                ]);
+                this.saveTranscriptHistory();
+              }
+            };
+
+            this.recognition.onend = () => {
+              if (this.recording) {
+                this.recognition.start();
+              }
+            };
+          } else {
+            this.currentTranscript =
+              "O reconhecimento de fala não é suportado pelo seu navegador.";
+          }
+        },
+        methods: {
+          toggleRecording() {
+            if (this.recording) {
+              this.recording = false;
+              this.recognition.stop();
+            } else {
+              this.recording = true;
+              this.recognition.start();
+            }
+          },
+          async selectAudioFile(event) {
+            if (this.audioSource) {
+              this.audioSource.stop();
+              this.audioSource = null;
+            }
+
+            this.audioFile = event.target.files[0];
+            if (this.audioFile) {
+              const audioContext = new AudioContext();
+              const audioBuffer = await this.audioFile.arrayBuffer();
+              this.audioSource = audioContext.createBufferSource();
+
+              audioContext.decodeAudioData(audioBuffer, (decodedData) => {
+                this.audioSource.buffer = decodedData;
+                this.audioSource.connect(audioContext.destination);
+                this.audioSource.start();
+              });
+            }
+          },
+          downloadConversation() {
+            if (this.transcriptHistory.length > 0) {
+              const blob = new Blob([this.transcriptHistory.join("\n")], {
+                type: "text/plain",
+              });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "conversation_history.txt";
+              document.body.appendChild(a);
+              a.click();
+            }
+          },
+          clearConversation() {
+            this.transcriptHistory = [];
+            this.saveTranscriptHistory();
+          },
+          saveTranscriptHistory() {
+            localStorage.setItem(
+              "transcriptHistory",
+              JSON.stringify(this.transcriptHistory)
+            );
+          },
+        },
+      });
+
+      app.mount("#app");
+    </script>
+  </body>
+</html>
