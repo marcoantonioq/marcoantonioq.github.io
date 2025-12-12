@@ -6,101 +6,274 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Reconhecimento de fala</title>
   <style>
+    /* Melhoria de estilização e acessibilidade */
+    :root {
+      --bg: #f7f9fc;
+      --card: #ffffff;
+      --accent: #0b63d1;
+      --danger: #c92a2a;
+      --danger-dark: #7a0000;
+      --success: #0b8a3e;
+      --muted: #6b7280;
+      --radius: 10px;
+      --gap: 12px;
+    }
+
     body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
+      background: var(--bg);
+      color: #0b1220;
     }
 
     #app {
-      max-width: 800px;
-      margin: 0 auto;
+      max-width: 900px;
+      margin: 24px auto;
+      padding: 20px;
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: 0 6px 18px rgba(11, 17, 32, 0.06);
     }
 
-    button {
-      margin: 5px;
-      padding: 10px 15px;
-      font-size: 14px;
-      background-color: #007bff;
-      color: white;
+    header.app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    header.app-header h1 {
+      font-size: 1.25rem;
+      margin: 0;
+    }
+
+    header.app-header p.subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--gap);
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    fieldset.controls-panel {
+      display: flex;
+      gap: var(--gap);
+      align-items: center;
+      border: 1px solid #e6edf8;
+      padding: 12px;
+      border-radius: 8px;
+      background: linear-gradient(180deg, rgba(11, 99, 209, 0.03), transparent);
+    }
+
+    fieldset.controls-panel legend {
+      font-weight: 600;
+      margin-left: 8px;
+      color: var(--muted);
+      padding: 0 6px;
+    }
+
+    .primary-btn {
+      background: var(--accent);
+      min-width: 160px;
+      padding: 12px 18px;
+      border-radius: 8px;
+      box-shadow: none;
+      font-weight: 700;
       border: none;
+      color: #fff;
       cursor: pointer;
-      opacity: 0.8;
-      min-width: 150px;
     }
 
-    button:hover {
-      opacity: 1;
+    .primary-btn[aria-pressed="true"] {
+      background: #063f87;
     }
 
-    h2 {
-      margin-top: 20px;
+    .danger-btn {
+      background: var(--danger);
+      min-width: 140px;
+      color: #fff;
+      border-radius: 8px;
+      padding: 10px 14px;
     }
 
-    p {
-      margin: 10px 0;
+    .success-btn {
+      background: var(--success);
+      min-width: 140px;
+      color: #fff;
+      border-radius: 8px;
+      padding: 10px 14px;
     }
 
-    small {
-      background-color: rgb(236, 236, 236);
-      -webkit-user-select: none;
-      user-select: none;
-      padding: 3px;
-      margin-right: 5px;
+    select,
+    input[type="file"] {
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      font-size: 0.95rem;
     }
 
-    .red {
-      background-color: rgb(223, 33, 33);
+    .control-group {
+      display: flex;
+      gap: 8px;
+      align-items: center;
     }
 
-    .red-1 {
-      background-color: rgb(122, 0, 0);
+    #transcribedText {
+      margin: 12px 0;
+      padding: 12px;
+      background: #f1f5f9;
+      border-radius: 8px;
+      min-height: 48px;
+      font-size: 1rem;
     }
 
-    .green {
-      background-color: green;
+    #transcriptHistory {
+      list-style: none;
+      padding: 0;
+      margin: 8px 0 0 0;
+      max-height: 240px;
+      overflow: auto;
+      border-top: 1px solid #eef2f7;
+      padding-top: 10px;
     }
 
-    [v-cloak] {
-      display: none;
+    #transcriptHistory li {
+      padding: 8px;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      background: #ffffff;
+      box-shadow: 0 1px 0 rgba(15, 23, 42, 0.02);
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+
+    #transcriptHistory small {
+      color: var(--muted);
+      min-width: 64px;
+      text-align: left;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* focus accessibility */
+    button:focus,
+    select:focus,
+    input[type="file"]:focus {
+      outline: 3px solid rgba(11, 99, 209, 0.18);
+      outline-offset: 2px;
+    }
+
+    .visually-hidden {
+      position: absolute !important;
+      height: 1px;
+      width: 1px;
+      overflow: hidden;
+      clip: rect(1px, 1px, 1px, 1px);
+      white-space: nowrap;
+      border: 0;
+      padding: 0;
+      margin: -1px;
+    }
+
+    @media (max-width: 600px) {
+      .controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      fieldset.controls-panel {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .primary-btn,
+      .danger-btn,
+      .success-btn {
+        width: 100%;
+        min-width: unset;
+      }
     }
   </style>
 </head>
 
 <body>
   <div id="app" v-cloak>
-    <button class="red" v-on:click="toggleRecording">
-      {{ recording ? 'Parar' : 'Iniciar' }}
-    </button>
-    <button class="green" v-on:click="downloadConversation">
-      Baixar conversas
-    </button>
-    <button class="red-1" v-on:click="clearConversation">Apagar conversas</button>
+    <header class="app-header" aria-hidden="false">
+      <div>
+        <h1>Reconhecimento de fala</h1>
+        <p class="subtitle">Escolha microfone, inicie a gravação e veja a transcrição em tempo real.</p>
+      </div>
+      <div class="control-status" aria-live="polite" aria-atomic="true">
+        <span class="visually-hidden" id="statusLabel">Status da aplicação</span>
+        <strong aria-describedby="statusLabel" style="color:var(--muted);font-size:0.95rem;">
+          {{ recording ? 'Gravando' : 'Parado' }}
+        </strong>
+      </div>
+    </header>
 
-    <p style="margin-bottom: 20px">
-      <label>Arquivo: <input type="file" accept="audio/*,video/*" v-on:change="selectAudioFile" /></label>
-    </p>
+    <div class="controls">
+      <fieldset class="controls-panel" role="group" aria-label="Controles de gravação">
+        <legend>Controles</legend>
 
-    <!-- Adicionado: seletor de microfone e botão para atualizar lista -->
-    <p style="margin-bottom: 20px">
-      <label>Microfone:
-        <select v-model="selectedDeviceId">
-          <option value="">Padrão do sistema</option>
-          <option v-for="device in audioDevices" :key="device.deviceId" :value="device.deviceId">
-            {{ device.label || ('Microfone ' + device.deviceId) }}
-          </option>
-        </select>
-      </label>
-      <button style="min-width:80px;margin-left:8px;" v-on:click="enumerateAudioDevices">Atualizar</button>
-    </p>
+        <div class="control-group">
+          <button class="primary-btn" v-on:click="toggleRecording" :aria-pressed="recording.toString()" aria-label="Iniciar ou parar gravação">
+            {{ recording ? '⏹ Parar' : '🎙 Iniciar' }}
+          </button>
+        </div>
 
-    <p id="transcribedText">{{ currentTranscript }}</p>
+        <div class="control-group">
+          <button class="success-btn" v-on:click="downloadConversation" aria-label="Baixar conversas">⬇️ Baixar</button>
+        </div>
 
-    <p v-for="([time, transcript], id) in transcriptHistory" :key="id">
-      <small>{{ time.replace(/:\d\d$/, '') }}</small>
-      {{ transcript }}
-      <br />
-    </p>
+        <div class="control-group">
+          <button class="danger-btn" v-on:click="clearConversation" aria-label="Apagar conversas">🗑 Apagar</button>
+        </div>
+
+        <div style="flex:1;"></div>
+
+        <div class="control-group" style="align-items:center;">
+          <label for="fileInput" class="visually-hidden">Selecionar arquivo de áudio ou vídeo</label>
+          <input id="fileInput" type="file" accept="audio/*,video/*" v-on:change="selectAudioFile" />
+        </div>
+
+      </fieldset>
+    </div>
+
+    <div class="controls" style="margin-top:6px;">
+      <label for="micSelect" style="font-weight:600;color:var(--muted);margin-right:8px;">Microfone</label>
+      <select id="micSelect" v-model="selectedDeviceId" aria-label="Selecionar microfone">
+        <option value="">Padrão do sistema</option>
+        <option v-for="device in audioDevices" :key="device.deviceId" :value="device.deviceId">
+          {{ device.label || ('Microfone ' + device.deviceId) }}
+        </option>
+      </select>
+      <button style="padding:8px 10px;border-radius:6px;" v-on:click="enumerateAudioDevices" aria-label="Atualizar lista de microfones">⟳ Atualizar</button>
+    </div>
+
+    <!-- área de transcrição com aria-live para leitores de tela -->
+    <section aria-label="Transcrição" aria-live="polite" aria-atomic="true">
+      <p id="transcribedText" role="status">{{ currentTranscript || 'Sem transcrição ainda' }}</p>
+    </section>
+
+    <section aria-label="Histórico de transcrições">
+      <h2 class="visually-hidden">Histórico</h2>
+      <ul id="transcriptHistory" role="list" aria-label="Lista de transcrições">
+        <li v-for="([time, transcript], id) in transcriptHistory" :key="id">
+          <small aria-hidden="true">{{ time.replace(/:\d\d$/, '') }}</small>
+          <div style="flex:1;">
+            <span class="visually-hidden">Transcrição às </span>
+            <span>{{ transcript }}</span>
+          </div>
+        </li>
+      </ul>
+    </section>
+
   </div>
 
   <!-- Substituir os scripts externos por scripts inline -->
