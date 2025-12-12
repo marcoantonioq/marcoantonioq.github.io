@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Leitor de Texto</title>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+      /* ESTILOS GLOBAIS E ESTRUTURA PRINCIPAL */
+      :root {
+        --color-primary: #3498db;
+        --color-secondary: #2ecc71;
+        --color-danger: #e74c3c;
+        --color-bg-light: #ecf0f1;
+        --color-bg-panel: #ffffff;
+        --color-text-dark: #2c3e50;
+        --color-highlight: #ffeaa7; /* Amarelo de destaque */
+      }
+      html,
+      body,
+      #app {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        font-family: "Open Sans", sans-serif;
+        background-color: var(--color-bg-light);
+        color: var(--color-text-dark);
+      }
+      #app {
+        display: flex;
+        flex-direction: column;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        box-sizing: border-box;
+      }
+      /* CABEÇALHO */
+      header {
+        text-align: center;
+        padding: 10px 0 20px;
+      }
+      h1 {
+        color: var(--color-primary);
+        margin: 0;
+        font-size: 2.2em;
+        font-weight: 700;
+      }
+      h1 span {
+        font-size: 0.6em;
+        color: #7f8c8d;
+        font-weight: 400;
+        display: block;
+      }
+      /* CONTEÚDO PRINCIPAL (EXPANSÍVEL) */
+      .main-content {
+        display: flex;
+        gap: 25px;
+        flex-grow: 1;
+        overflow: hidden;
+      }
+      /* --- PAINEL DE CONTROLES LATERAIS --- */
+      .controls-panel {
+        min-width: 280px;
+        max-width: 300px;
+        background-color: var(--color-bg-panel);
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.08);
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      /* GRUPO DE CONTROLE */
+      .control-group {
+        display: flex;
+        flex-direction: column;
+      }
+      .control-group label {
+        font-weight: 600;
+        color: var(--color-text-dark);
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .slider-row {
+        display: flex;
+        align-items: center;
+        background-color: #f7f9fb;
+        padding: 8px;
+        border-radius: 6px;
+      }
+      input[type="range"] {
+        flex-grow: 1;
+        padding: 0;
+        margin: 0 10px;
+        height: 8px;
+        -webkit-appearance: none;
+        background: #ddd;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--color-primary);
+        cursor: pointer;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+      .value-display {
+        min-width: 40px;
+        text-align: center;
+        font-weight: 700;
+        color: var(--color-primary);
+        background-color: #e5f2ff;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.9em;
+      }
+      select {
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        background-color: var(--color-bg-panel);
+        font-size: 1em;
+        cursor: pointer;
+        transition: border-color 0.3s;
+      }
+      select:focus {
+        border-color: var(--color-primary);
+        outline: none;
+      }
+      /* --- ÁREA DE TEXTO E EDIÇÃO --- */
+      .text-editor-area {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+      }
+      .edit-button-container {
+        padding-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .text-mode-label {
+        font-weight: 600;
+        color: var(--color-text-dark);
+        font-size: 1.1em;
+      }
+      .text-mode-label span {
+        margin-left: 5px;
+      }
+
+      .edit-toggle-btn {
+        padding: 10px 20px;
+        font-size: 1em;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.3s, transform 0.1s;
+        font-weight: 600;
+      }
+      .edit-toggle-btn:hover {
+        background-color: #2980b9;
+      }
+      .edit-toggle-btn:active {
+        transform: scale(0.98);
+      }
+
+      /* CORREÇÃO: Removi a limitação de altura da div para não forçar barra de rolagem dupla */
+      .text-content-box {
+        flex-grow: 1;
+        background-color: var(--color-bg-panel);
+        border: 3px solid #ccc;
+        border-radius: 12px;
+        padding: 20px;
+        font-size: 1.15em;
+        line-height: 1.7;
+        overflow-y: auto;
+        /* Garante quebra de linha de forma previsível */
+        white-space: pre-wrap;
+        transition: border-color 0.4s, box-shadow 0.4s;
+        max-height: calc(100vh - 250px);
+      }
+
+      /* Estilo para modo de EDIÇÃO ATIVO */
+      .text-content-box[contenteditable="true"] {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 10px rgba(52, 152, 219, 0.3);
+        cursor: text;
+      }
+      /* Estilo para modo de LEITURA ATIVO */
+      .text-content-box[contenteditable="false"] {
+        cursor: default;
+      }
+      /* CLASSE DE DESTAQUE - Corrigi o padding para ser mais discreto */
+      .highlighted-word {
+        background-color: var(--color-highlight);
+        border-radius: 4px;
+        padding: 0 2px;
+        font-weight: 700;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      /* CONTROLES PRINCIPAIS (RODAPÉ) */
+      footer {
+        padding: 25px 0 10px;
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+      }
+      button {
+        padding: 12px 30px;
+        font-size: 1.1em;
+        font-weight: 700;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s, transform 0.1s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      #read-btn {
+        background-color: var(--color-secondary);
+        color: white;
+      }
+      #read-btn:hover:not(:disabled) {
+        background-color: #27ae60;
+      }
+      #stop-btn {
+        background-color: var(--color-danger);
+        color: white;
+      }
+      #stop-btn:hover:not(:disabled) {
+        background-color: #c0392b;
+      }
+      button:disabled {
+        background-color: #ddd;
+        color: #888;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+      .error-message {
+        color: var(--color-danger);
+        background-color: #fcebeb;
+        border: 1px solid var(--color-danger);
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+        font-weight: bold;
+        margin-top: 20px;
+        font-size: 1.1em;
+      }
+      /* MEDIA QUERIES (Responsividade) */
+      @media (max-width: 900px) {
+        #app {
+          padding: 15px;
+        }
+        .main-content {
+          flex-direction: column;
+          gap: 15px;
+        }
+        .controls-panel {
+          min-width: 100%;
+          max-width: 100%;
+          overflow-x: hidden;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+        .text-content-box {
+          max-height: 400px;
+        }
+        footer {
+          flex-direction: column;
+          gap: 15px;
+        }
+        button {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <header>
+      </header>
+      <div v-if="!isAPISupported" class="main-content">
+        <div class="error-message">
+          <i class="material-icons">sentiment_very_dissatisfied</i>
+          🛑 **Erro:** A API de Fala (Web Speech API) não é suportada neste
+          navegador.
+        </div>
+      </div>
+
+      <div v-else class="main-content">
+        <div class="controls-panel">
+          <h2
+            style="
+              margin: 0 0 10px;
+              font-size: 1.3em;
+              color: var(--color-primary);
+            "
+          >
+            Ajustes de Leitura
+          </h2>
+          <div class="control-group">
+            <label for="voice-select"
+              ><i class="material-icons" style="font-size: 1.2em">volume_up</i>
+              Voz:</label
+            >
+            <select
+              id="voice-select"
+              v-model="selectedVoiceName"
+              :disabled="isSpeaking"
+            >
+              <option
+                v-for="voice in ptVoices"
+                :key="voice.name"
+                :value="voice.name"
+              >
+                {{ voice.name }} ({{ voice.lang }})
+              </option>
+              <option disabled>--- Outras Vozes ---</option>
+              <option
+                v-for="voice in otherVoices"
+                :key="voice.name"
+                :value="voice.name"
+              >
+                {{ voice.name }} ({{ voice.lang }})
+              </option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label for="rate-range"
+              ><i class="material-icons" style="font-size: 1.2em">speed</i>
+              Velocidade (Rate):</label
+            >
+            <div class="slider-row">
+              <input
+                type="range"
+                min="0.5"
+                max="2.5"
+                step="0.1"
+                v-model.number="rate"
+                :disabled="isSpeaking"
+              />
+              <span class="value-display">{{ formattedRate }}</span>
+            </div>
+          </div>
+          <div class="control-group">
+            <label for="volume-range"
+              ><i class="material-icons" style="font-size: 1.2em"
+                >volume_down</i
+              >
+              Volume:</label
+            >
+            <div class="slider-row">
+              <input
+                type="range"
+                id="volume-range"
+                min="0.0"
+                max="1.0"
+                step="0.1"
+                v-model.number="volume"
+                :disabled="isSpeaking"
+              />
+              <span class="value-display">{{ formattedVolume }}</span>
+            </div>
+          </div>
+          <div class="control-group">
+            <label for="pitch-range"
+              ><i class="material-icons" style="font-size: 1.2em">graphic_eq</i>
+              Tom (Pitch):</label
+            >
+            <div class="slider-row">
+              <input
+                type="range"
+                id="pitch-range"
+                min="0.0"
+                max="2.0"
+                step="0.1"
+                v-model.number="pitch"
+                :disabled="isSpeaking"
+              />
+              <span class="value-display">{{ formattedPitch }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-editor-area">
+          <div class="edit-button-container">
+            <div class="text-mode-label">
+              Modo Atual:
+              <span
+                :style="{ color: editMode ? 'var(--color-danger)' : 'var(--color-secondary)' }"
+              >
+                {{ editMode ? 'Edição' : 'Leitura' }}
+              </span>
+            </div>
+
+            <button
+              class="edit-toggle-btn"
+              @click="toggleEditMode"
+              :disabled="isSpeaking"
+              :style="{ backgroundColor: editMode ? 'var(--color-danger)' : 'var(--color-primary)' }"
+            >
+              <i class="material-icons" style="margin-right: 5px"
+                >{{ editMode ? 'save' : 'edit' }}</i
+              >
+              {{ editMode ? 'Salvar e Ver Texto' : 'Editar Conteúdo' }}
+            </button>
+          </div>
+
+          <div
+            class="text-content-box"
+            ref="textContainer"
+            :contenteditable="editMode && !isSpeaking"
+            @input="updateFullText"
+            :class="{'editing-active': editMode}"
+            v-html="currentDisplayContent"
+          ></div>
+        </div>
+      </div>
+      <footer>
+        <button
+          id="read-btn"
+          @click="speak"
+          :disabled="!isAPISupported || !fullText.trim()"
+        >
+          <i class="material-icons"
+            >{{ isSpeaking && !isPaused ? 'pause_circle_filled' : 'play_circle_filled' }}</i
+          >
+          {{ isSpeaking && !isPaused ? 'Pausar Leitura' : (isPaused ? 'Recomeçar Leitura' : 'Ler Texto') }}
+        </button>
+        <button id="stop-btn" @click="stop" :disabled="!isSpeaking">
+          <i class="material-icons">stop_circle</i>
+          Parar Leitura
+        </button>
+      </footer>
+    </div>
+    <script>
+      const { createApp, ref, computed, nextTick } = Vue;
+      const App = {
+        setup() {
+          const isAPISupported = "speechSynthesis" in window;
+          const synth = window.speechSynthesis;
+
+          // Variáveis Reativas
+          const fullText = ref(
+            "Aqui está a interface refatorada com painel de controle limpo e foco total no texto. Clique em 'Editar Conteúdo' para modificar o conteúdo. O destaque em tempo real está agora mais preciso."
+          );
+          // Estado para indicar se a fala está ATIVA (falando ou pausada)
+          const isSpeaking = ref(false);
+          // NOVO: Estado para rastrear se a fala está PAUSADA
+          const isPaused = ref(false); 
+          const allVoices = ref([]);
+          const selectedVoiceName = ref("");
+
+          const rate = ref(1.2);
+          const volume = ref(1.0);
+          const pitch = ref(1.0);
+
+          // Variáveis para Destaque e Edição
+          const currentWordIndex = ref(-1);
+          let words = []; // Array que guarda palavras e espaços
+          const editMode = ref(false);
+          const textContainer = ref(null);
+
+          // --- PROPRIEDADES COMPUTADAS ---
+          const formattedRate = computed(() => rate.value.toFixed(1) + "x");
+          const formattedVolume = computed(() => volume.value.toFixed(1));
+          const formattedPitch = computed(() => pitch.value.toFixed(1));
+
+          /**
+           * Retorna o conteúdo a ser exibido (texto simples OU texto com HTML de destaque).
+           */
+          const currentDisplayContent = computed(() => {
+            if (editMode.value) {
+              return fullText.value;
+            }
+
+            // Fora do modo de edição: Prepara para o destaque
+            words = fullText.value.split(/(\s+)/);
+
+            if (currentWordIndex.value === -1) {
+              return fullText.value;
+            }
+
+            // Mapeia o array, aplicando o <span> na palavra do índice atual
+            return words
+              .map((word, index) => {
+                if (index === currentWordIndex.value) {
+                  // Garante que o destaque só é aplicado se não for um espaço
+                  if (word.trim().length > 0) {
+                    return `<span class="highlighted-word">${word}</span>`;
+                  }
+                }
+                return word;
+              })
+              .join("");
+          });
+
+          // --------------------------------------------------------
+
+          /**
+           * Atualiza o fullText quando o contenteditable é alterado.
+           */
+          function updateFullText(event) {
+            if (event.target) {
+              fullText.value = event.target.innerText;
+            }
+          }
+
+          /**
+           * Alterna entre modo de edição e leitura.
+           */
+          function toggleEditMode() {
+            // CORREÇÃO: Cancela a leitura ao tentar entrar no modo de edição
+            if (isSpeaking.value) {
+                stop();
+            }
+
+            editMode.value = !editMode.value;
+
+            if (!editMode.value) {
+              // Ao sair do modo de edição (salvar)
+              nextTick(() => {
+                if (textContainer.value) {
+                  // Garante que o 'v-html' do currentDisplayContent (agora com texto puro)
+                  textContainer.value.innerHTML = fullText.value;
+                }
+              });
+            } else {
+              // Ao entrar no modo de edição
+              nextTick(() => {
+                if (textContainer.value) {
+                  // Garante que o texto puro seja colocado para edição
+                  textContainer.value.innerText = fullText.value;
+                  textContainer.value.focus();
+                }
+              });
+            }
+          }
+
+          // --- Lógica de Vozes ---
+          const populateVoiceList = () => {
+            allVoices.value = synth.getVoices();
+            const defaultPT = allVoices.value.find((voice) =>
+              voice.lang.startsWith("pt")
+            );
+            if (defaultPT) {
+              selectedVoiceName.value = defaultPT.name;
+            } else if (allVoices.value.length > 0) {
+              selectedVoiceName.value = allVoices.value[0].name;
+            }
+          };
+
+          if (isAPISupported) {
+            populateVoiceList();
+            if (synth.onvoiceschanged !== undefined) {
+              synth.onvoiceschanged = populateVoiceList;
+            }
+          }
+          const ptVoices = computed(() =>
+            allVoices.value.filter(
+              (voice) => voice.localService && voice.lang.startsWith("pt")
+            )
+          );
+          const otherVoices = computed(() =>
+            allVoices.value.filter(
+              (voice) => !voice.lang.startsWith("pt") || !voice.localService
+            )
+          );
+          // --- Fim Lógica de Vozes ---
+
+          /**
+           * REVISADO: Inicia, Pausa ou Recomeça a leitura, gerenciando os estados.
+           */
+          function speak() {
+            if (!isAPISupported || !fullText.value.trim()) return;
+            editMode.value = false; // Força modo leitura ao iniciar
+
+            // 1. Recomeçar (se estiver pausado)
+            if (synth.paused) {
+              synth.resume();
+              isSpeaking.value = true;
+              isPaused.value = false;
+              return;
+            }
+
+            // 2. Pausar (se estiver falando ativamente)
+            if (synth.speaking && !synth.paused) {
+              synth.pause();
+              isSpeaking.value = true; // Continua TRUE, mas está em estado de pausa
+              isPaused.value = true;
+              return;
+            }
+
+            // 3. Iniciar nova leitura (se não estiver falando nem pausado)
+            
+            synth.cancel(); // Garante que a fila esteja limpa
+            
+            currentWordIndex.value = -1; // Limpa destaque anterior
+            isPaused.value = false; // Garante que o estado de pausa seja falso
+
+            const utterance = new SpeechSynthesisUtterance(fullText.value);
+
+            const selectedVoice = allVoices.value.find(
+              (voice) => voice.name === selectedVoiceName.value
+            );
+            if (selectedVoice) {
+              utterance.voice = selectedVoice;
+              utterance.lang = selectedVoice.lang;
+            } else {
+              utterance.lang = "pt-BR";
+            }
+
+            utterance.rate = rate.value;
+            utterance.pitch = pitch.value;
+            utterance.volume = volume.value;
+
+            // 1. Divide o texto em palavras E espaços (para o destaque visual)
+            words = fullText.value.split(/(\s+)/);
+
+            // LÓGICA DE DESTAQUE:
+            utterance.onboundary = (event) => {
+              if (
+                event.name === "word" ||
+                event.name === "" ||
+                event.charLength > 0
+              ) {
+                const boundaryCharIndex = event.charIndex;
+                let finalWordIndex = -1;
+                let cumulativeLength = 0;
+
+                for (let i = 0; i < words.length; i++) {
+                  const wordOrSpace = words[i];
+                  if (
+                    boundaryCharIndex >= cumulativeLength &&
+                    boundaryCharIndex < cumulativeLength + wordOrSpace.length &&
+                    wordOrSpace.trim().length > 0
+                  ) {
+                    finalWordIndex = i;
+                    break;
+                  }
+                  cumulativeLength += wordOrSpace.length;
+                }
+
+                if (finalWordIndex !== -1) {
+                  currentWordIndex.value = finalWordIndex;
+                  nextTick(() => {
+                    // Rola a tela para a palavra destacada
+                    const highlightedElement =
+                      textContainer.value.querySelector(".highlighted-word");
+                    if (highlightedElement) {
+                      highlightedElement.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                      });
+                    }
+                  });
+                }
+              }
+            };
+
+            utterance.onstart = () => {
+              isSpeaking.value = true;
+              isPaused.value = false;
+            };
+            
+            // onend só deve resetar se a fala realmente terminou (e não foi pausada)
+            utterance.onend = () => {
+              if (!synth.paused) { 
+                isSpeaking.value = false;
+                currentWordIndex.value = -1; // Limpa o destaque
+              }
+            };
+            
+            utterance.onerror = (event) => {
+              console.error("Erro na síntese de voz:", event);
+              isSpeaking.value = false;
+              isPaused.value = false;
+              currentWordIndex.value = -1;
+            };
+
+            synth.speak(utterance);
+          }
+
+          /**
+           * Interrompe a leitura imediatamente e cancela a fila.
+           */
+          function stop() {
+            if (synth.speaking || synth.paused) {
+              synth.cancel();
+              isSpeaking.value = false;
+              isPaused.value = false; // Garante o reset do estado de pausa
+              currentWordIndex.value = -1;
+            }
+          }
+          
+          return {
+            isAPISupported,
+            fullText,
+            currentDisplayContent,
+            isSpeaking,
+            isPaused, // NOVO: Estado de pausa
+            selectedVoiceName,
+            ptVoices,
+            otherVoices,
+            rate,
+            volume,
+            pitch,
+            formattedRate,
+            formattedVolume,
+            formattedPitch,
+            speak,
+            stop,
+            editMode,
+            toggleEditMode,
+            updateFullText,
+            textContainer,
+          };
+        },
+      };
+      // Monta o aplicativo Vue
+      createApp(App).mount("#app");
+    </script>
+  </body>
+</html>

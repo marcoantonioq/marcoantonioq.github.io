@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OCR no Navegador (Tesseract.js)</title>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+
+    <style>
+      /* [Estilos CSS completos aqui, omitidos para brevidade] */
+      :root {
+        --color-primary: #3498db;
+        --color-secondary: #2ecc71;
+        --color-danger: #e74c3c;
+        --color-bg-light: #ecf0f1;
+        --color-bg-panel: #ffffff;
+        --color-text-dark: #2c3e50;
+      }
+      html, body, #app { height: 100%; margin: 0; padding: 0; font-family: "Open Sans", sans-serif; background-color: var(--color-bg-light); color: var(--color-text-dark); }
+      #app { display: flex; flex-direction: column; max-width: 1200px; margin: 0 auto; padding: 20px; box-sizing: border-box; }
+      header { text-align: center; padding: 10px 0 20px; }
+      h1 { color: var(--color-primary); margin: 0; font-size: 2.2em; font-weight: 700; }
+      h1 span { font-size: 0.6em; color: #7f8c8d; font-weight: 400; display: block; }
+      .main-content { display: flex; gap: 25px; flex-grow: 1; overflow: hidden; }
+      .controls-panel { min-width: 280px; max-width: 300px; background-color: var(--color-bg-panel); padding: 20px; border-radius: 12px; box-shadow: 0 8px 15px rgba(0, 0, 0, 0.08); display: flex; flex-direction: column; gap: 20px; }
+      .control-group { display: flex; flex-direction: column; }
+      .control-group label { font-weight: 600; color: var(--color-text-dark); margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
+      select, input[type="file"] { padding: 10px; border-radius: 6px; border: 1px solid #ccc; background-color: var(--color-bg-panel); font-size: 1em; cursor: pointer; transition: border-color 0.3s; }
+      select:focus, input[type="file"]:focus { border-color: var(--color-primary); outline: none; }
+      .image-preview-area { height: 200px; border: 2px dashed #ccc; border-radius: 8px; display: flex; justify-content: center; align-items: center; color: #7f8c8d; text-align: center; cursor: pointer; transition: border-color 0.3s, background-color 0.3s; overflow: hidden; }
+      .image-preview-area:hover { border-color: var(--color-primary); background-color: #f7f9fb; }
+      .image-preview-area img { max-width: 100%; max-height: 100%; object-fit: contain; }
+      .image-placeholder-text { padding: 10px; display: flex; flex-direction: column; align-items: center; }
+      .text-editor-area { flex-grow: 1; display: flex; flex-direction: column; }
+      .text-output-box { flex-grow: 1; background-color: var(--color-bg-panel); border: 3px solid #ccc; border-radius: 12px; padding: 20px; font-size: 1.15em; line-height: 1.7; overflow-y: auto; white-space: pre-wrap; transition: border-color 0.4s, box-shadow 0.4s; min-height: 200px; width: 100%; box-sizing: border-box; resize: none; font-family: "Open Sans", sans-serif; color: var(--color-text-dark); }
+      .text-output-box.loading-ocr { border-color: var(--color-secondary); }
+      footer { padding: 25px 0 10px; display: flex; justify-content: center; gap: 30px; }
+      button { padding: 12px 30px; font-size: 1.1em; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.3s, transform 0.1s; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+      #run-ocr-btn { background-color: var(--color-primary); color: white; }
+      #run-ocr-btn:hover:not(:disabled) { background-color: #2980b9; }
+      button:disabled { background-color: #ddd; color: #888; cursor: not-allowed; box-shadow: none; }
+      .progress-bar { background-color: #f3f3f3; border-radius: 5px; overflow: hidden; height: 15px; margin-top: 10px; width: 100%; }
+      .progress-fill { height: 100%; background-color: var(--color-secondary); transition: width 0.3s; }
+      .loading-message { text-align: center; color: var(--color-primary); font-weight: 600; margin-top: 5px; font-size: 0.9em; }
+      @media (max-width: 900px) { #app { padding: 15px; } .main-content { flex-direction: column; gap: 15px; } .controls-panel { min-width: 100%; max-width: 100%; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); } .text-output-box { max-height: 400px; } footer { flex-direction: column; gap: 15px; } button { width: 100%; justify-content: center; } }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <h1>
+          OCR no Navegador
+          <span>Extraia texto de imagens (e PDFs) usando Tesseract.js</span>
+        </h1>
+      </header>
+
+      <div class="main-content">
+        <div class="controls-panel">
+          <h2
+            style="
+              margin: 0 0 10px;
+              font-size: 1.3em;
+              color: var(--color-primary);
+            "
+          >
+            Controles de OCR
+          </h2>
+
+          <div class="control-group">
+            <label for="lang-select">
+              <i class="material-icons" style="font-size: 1.2em">language</i>
+              Idioma do Texto:</label
+            >
+            <select
+              id="lang-select"
+              v-model="selectedLang"
+              :disabled="isProcessing"
+            >
+              <option value="eng">Inglês (eng)</option>
+              <option value="por">Português (por)</option>
+              <option value="spa">Espanhol (spa)</option>
+              <option value="fra">Francês (fra)</option>
+              <option value="deu">Alemão (deu)</option>
+              <option value="jpn">Japonês (jpn)</option>
+              <option value="kor">Coreano (kor)</option>
+              <option value="chi_sim">Chinês Simplificado (chi_sim)</option>
+            </select>
+          </div>
+          
+          <div class="control-group">
+            <label for="psm-select">
+              <i class="material-icons" style="font-size: 1.2em">view_column</i>
+              Modo de Coluna/Layout (PSM):</label
+            >
+            <select
+              id="psm-select"
+              v-model="selectedPSM"
+              :disabled="isProcessing"
+            >
+              <option value="3">3 - Layout Automático (Padrão)</option>
+              <option value="6">6 - Bloco Uniforme (Simples)</option>
+              <option value="5">5 - Coluna/Página Complexa</option>
+              <option value="1">1 - Coluna com Detecção de Orientação</option>
+              <option value="0">0 - Detecção de Orientação e Script</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label for="image-upload">
+              <i class="material-icons" style="font-size: 1.2em">upload_file</i>
+              Arquivo para OCR (Imagem ou PDF):</label
+            >
+            <input
+              type="file"
+              id="image-upload"
+              accept="image/*,application/pdf"
+              @change="handleFileUpload"
+              :disabled="isProcessing"
+              style="display: none"
+              ref="fileInput"
+            />
+            <div
+              class="image-preview-area"
+              @click="openFileInput"
+              @dragover.prevent
+              @drop.prevent="handleFileDrop"
+              @paste="handlePaste"
+              :tabindex="isProcessing ? -1 : 0"
+            >
+              <img v-if="imageURL" :src="imageURL" alt="Pré-visualização da Imagem" />
+              <div v-else-if="imageFile" class="image-placeholder-text">
+                 <i class="material-icons" style="font-size: 3em">
+                    {{ isPdf ? 'picture_as_pdf' : 'insert_drive_file' }}
+                 </i>
+                 Arquivo Pronto: <br/> **{{ imageFile.name }}**
+              </div>
+              <div v-else class="image-placeholder-text">
+                <i class="material-icons" style="font-size: 3em">cloud_upload</i>
+                Clique para selecionar,<br />arraste ou cole (Ctrl+V) a imagem/PDF.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-editor-area">
+          <div class="edit-button-container">
+            <div class="text-mode-label">
+              Status:
+              <span
+                :style="{ color: isProcessing ? 'var(--color-primary)' : (extractedText ? 'var(--color-secondary)' : '#7f8c8d') }"
+              >
+                {{ statusText }}
+              </span>
+            </div>
+          </div>
+
+          <textarea
+            class="text-output-box"
+            :class="{ 'loading-ocr': isProcessing }"
+            v-model="extractedText"
+            :readonly="isProcessing"
+            spellcheck="true"
+            placeholder="O texto extraído da imagem ou PDF aparecerá aqui. Você poderá editá-lo após o processamento."
+          ></textarea>
+          
+          <div v-if="isProcessing">
+              <div class="progress-bar">
+                  <div class="progress-fill" :style="{ width: progress + '%' }"></div>
+              </div>
+              <div class="loading-message">{{ loadingMessage }} ({{ progress.toFixed(0) }}%)</div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <button
+          id="run-ocr-btn"
+          @click="runOCR"
+          :disabled="isProcessing || !imageFile"
+        >
+          <i class="material-icons">
+            {{ isProcessing ? 'cached' : 'text_fields' }}
+          </i>
+          {{ isProcessing ? 'Processando...' : 'Extrair Texto (OCR)' }}
+        </button>
+        <button
+          id="clear-btn"
+          @click="clearAll"
+          :disabled="isProcessing"
+          style="background-color: var(--color-danger); color: white;"
+        >
+          <i class="material-icons">clear</i>
+          Limpar Tudo
+        </button>
+      </footer>
+    </div>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/tesseract.js@5.0.0/dist/tesseract.min.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.js"></script>
+    
+    <script>
+      // Este script deve ser executado IMEDIATAMENTE após o carregamento do pdf.min.js.
+      // Isso garante que o workerSrc seja definido antes que qualquer outra função tente acessar pdfjsLib.
+      if (typeof pdfjsLib !== 'undefined') {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js';
+      }
+    </script>
+
+    <script>
+      const { createApp, ref, computed } = Vue;
+
+      // Variáveis globais para o worker Tesseract.js
+      let ocrWorker = null; 
+      
+      /**
+       * Lógica para converter PDF em um array de Blobs de Imagem (um por página).
+       * @param {File} pdfFile O arquivo PDF a ser processado.
+       * @param {Function} updateLoadingMessage Função para atualizar o status de carregamento no Vue.
+       * @returns {Promise<Blob[]>} Um array de Blobs de imagem.
+       */
+      async function convertPdfToImages(pdfFile, updateLoadingMessage) {
+          if (typeof pdfjsLib === 'undefined' || typeof pdfjsLib.getDocument === 'undefined') {
+               // Mensagem de erro alterada para ajudar no debug final
+               throw new Error("A biblioteca PDF.js falhou ao carregar. Tente recarregar a página ou verificar sua conexão.");
+          }
+
+          const loadingTask = pdfjsLib.getDocument(URL.createObjectURL(pdfFile));
+          const pdf = await loadingTask.promise;
+          const numPages = pdf.numPages;
+          const images = [];
+          const canvas = document.createElement('canvas');
+          const canvasContext = canvas.getContext('2d');
+
+          for (let i = 1; i <= numPages; i++) {
+              updateLoadingMessage(`Renderizando página ${i} de ${numPages}...`);
+              
+              const page = await pdf.getPage(i);
+              const viewport = page.getViewport({ scale: 2 }); 
+              
+              canvas.height = viewport.height;
+              canvas.width = viewport.width;
+
+              const renderContext = {
+                  canvasContext,
+                  viewport,
+              };
+              
+              await page.render(renderContext).promise;
+
+              const blob = await new Promise(resolve => {
+                  canvas.toBlob(resolve, 'image/png');
+              });
+              
+              images.push(blob);
+          }
+          
+          URL.revokeObjectURL(loadingTask.url);
+          
+          return images;
+      }
+
+
+      const App = {
+        setup() {
+          const imageFile = ref(null);
+          const imageURL = ref(null);
+          const extractedText = ref("");
+          const selectedLang = ref("por");
+          const selectedPSM = ref("3");
+          const isProcessing = ref(false);
+          const isPdf = ref(false);
+          const progress = ref(0);
+          const loadingMessage = ref("");
+          const fileInput = ref(null);
+
+          // Função interna para atualizar o progresso e a mensagem de forma reativa
+          const updateStatus = (m) => {
+              const langCode = selectedLang.value;
+
+              if (m.status === 'recognizing') {
+                  if (!isPdf.value) {
+                     progress.value = m.progress * 95 + 5; 
+                     loadingMessage.value = 'Reconhecendo o texto (OCR)...';
+                  }
+              } else if (m.status === 'load' || m.status === 'loading tesseract core') {
+                  loadingMessage.value = 'Carregando motor principal...';
+              } else if (m.status === 'loading lang data') {
+                  progress.value = m.progress * 100;
+                  loadingMessage.value = `Preparando dados de ${langCode}.traineddata...`;
+              } else if (m.status === 'initializing api') {
+                  progress.value = m.progress * 100;
+                  loadingMessage.value = 'Inicializando o motor OCR...';
+              }
+          };
+
+          // --- Métodos de Arquivo (Inalterados) ---
+          const statusText = computed(() => {
+            if (isProcessing.value) { return "Em Processamento"; }
+            if (extractedText.value) { return "Texto Extraído com Sucesso"; }
+            if (imageFile.value) { return isPdf.value ? "PDF Pronto para OCR" : "Imagem Pronta para OCR"; }
+            return "Aguardando Arquivo";
+          });
+
+          function openFileInput() { if (!isProcessing.value && fileInput.value) { fileInput.value.click(); } }
+          function handleFileUpload(event) { processFile(event.target.files[0]); }
+          function handleFileDrop(event) { processFile(event.dataTransfer.files[0]); }
+
+          function handlePaste(event) {
+            if (isProcessing.value) return;
+            const items = event.clipboardData.items;
+            for (let i = 0; i < items.length; i++) {
+              if (items[i].type.indexOf('image') !== -1) {
+                processFile(items[i].getAsFile());
+                event.preventDefault();
+                return;
+              }
+            }
+          }
+
+          function processFile(file) {
+            if (!file || (!file.type.startsWith('image/') && file.type !== 'application/pdf')) {
+                alert("Formato de arquivo não suportado. Use imagens (PNG, JPG) ou PDF.");
+                imageFile.value = null;
+                return;
+            }
+            clearURL();
+            imageFile.value = file;
+            extractedText.value = "";
+            isPdf.value = file.type === 'application/pdf';
+            imageURL.value = isPdf.value ? null : URL.createObjectURL(file);
+          }
+
+          function clearURL() {
+            if (imageURL.value) { URL.revokeObjectURL(imageURL.value); imageURL.value = null; }
+          }
+
+          function clearAll() {
+            if (isProcessing.value) return;
+            clearURL();
+            imageFile.value = null;
+            extractedText.value = "";
+            progress.value = 0;
+            loadingMessage.value = "";
+            isPdf.value = false;
+            if (fileInput.value) { fileInput.value.value = ''; }
+          }
+          
+          /**
+           * Inicializa o worker do Tesseract.js (v5) com a linguagem e parâmetros.
+           */
+          async function initializeWorker(langCode, psmValue) {
+              // Se o worker já existe, apenas atualiza parâmetros (mantendo a eficiência)
+              if (ocrWorker) {
+                  await ocrWorker.setParameters({ 
+                      tessedit_pageseg_mode: psmValue 
+                  });
+                  return ocrWorker;
+              }
+              
+              // Cria e inicializa o worker com a linguagem e parâmetros de uma só vez
+              loadingMessage.value = `Criando worker OCR para o idioma: ${langCode}...`;
+              progress.value = 0;
+              
+              const worker = await Tesseract.createWorker(langCode, 1, {
+                  worker: {
+                      tessedit_pageseg_mode: psmValue
+                  },
+                  logger: updateStatus
+              });
+
+              ocrWorker = worker;
+              return worker;
+          }
+
+          // --- LÓGICA DE OCR ---
+          async function runOCR() {
+            if (!imageFile.value || isProcessing.value) return;
+
+            isProcessing.value = true;
+            extractedText.value = "Iniciando processamento..."; 
+            progress.value = 0;
+            loadingMessage.value = "Iniciando o OCR...";
+
+            let filesToProcess = [];
+
+            try {
+              const langCode = selectedLang.value;
+              const psmValue = selectedPSM.value;
+
+              await initializeWorker(langCode, psmValue);
+              
+              // 1. CONVERSÃO (SE FOR PDF)
+              if (isPdf.value) {
+                  filesToProcess = await convertPdfToImages(imageFile.value, (msg) => {
+                      loadingMessage.value = msg; 
+                  });
+              } else {
+                  filesToProcess.push(imageFile.value);
+              }
+              
+              if (filesToProcess.length === 0) {
+                   throw new Error("Não foi possível processar o arquivo. Nenhuma página encontrada.");
+              }
+
+              // 2. RECONHECIMENTO DO TEXTO (LOOP)
+              extractedText.value = "";
+              let finalResultText = [];
+
+              for (let i = 0; i < filesToProcess.length; i++) {
+                  const file = filesToProcess[i];
+                  
+                  if (isPdf.value) {
+                       loadingMessage.value = `Reconhecendo página ${i + 1} de ${filesToProcess.length}...`;
+                       progress.value = 5 + (i / filesToProcess.length) * 90;
+                  }
+
+                  const { data: { text } } = await ocrWorker.recognize(file);
+                  
+                  if (isPdf.value && i > 0) {
+                      finalResultText.push(`\n\n=== FIM DA PÁGINA ${i} ===\n\n`);
+                  }
+                  
+                  finalResultText.push(text.trim().replace(/\s\s+/g, ' '));
+              }
+              
+              extractedText.value = finalResultText.join("\n");
+
+
+            } catch (error) {
+              console.error("Erro no OCR:", error);
+              extractedText.value = `ERRO ao extrair o texto. Detalhe: ${error.message}`;
+              
+              if (ocrWorker) {
+                 await ocrWorker.terminate();
+                 ocrWorker = null;
+              }
+              
+            } finally {
+              isProcessing.value = false;
+              progress.value = 100; 
+              loadingMessage.value = extractedText.value.startsWith('ERRO') ? "Falha no Processamento" : "Concluído";
+            }
+          }
+          
+          window.addEventListener('beforeunload', () => {
+             clearURL(); 
+             if (ocrWorker) { ocrWorker.terminate(); }
+          });
+
+
+          return {
+            imageFile, imageURL, extractedText, selectedLang, selectedPSM,
+            isProcessing, isPdf, progress, loadingMessage, fileInput,
+            statusText, handleFileUpload, handleFileDrop, handlePaste,
+            openFileInput, runOCR, clearAll,
+          };
+        },
+      };
+
+      // Monta o aplicativo Vue
+      createApp(App).mount("#app");
+    </script>
+  </body>
+</html>

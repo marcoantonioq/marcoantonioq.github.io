@@ -81,6 +81,19 @@
       <label>Arquivo: <input type="file" accept="audio/*,video/*" v-on:change="selectAudioFile" /></label>
     </p>
 
+    <!-- Adicionado: seletor de microfone e botão para atualizar lista -->
+    <p style="margin-bottom: 20px">
+      <label>Microfone:
+        <select v-model="selectedDeviceId">
+          <option value="">Padrão do sistema</option>
+          <option v-for="device in audioDevices" :key="device.deviceId" :value="device.deviceId">
+            {{ device.label || ('Microfone ' + device.deviceId) }}
+          </option>
+        </select>
+      </label>
+      <button style="min-width:80px;margin-left:8px;" v-on:click="enumerateAudioDevices">Atualizar</button>
+    </p>
+
     <p id="transcribedText">{{ currentTranscript }}</p>
 
     <p v-for="([time, transcript], id) in transcriptHistory" :key="id">
@@ -90,119 +103,281 @@
     </p>
   </div>
 
-  <!-- Inclua o Vosk WebAssembly -->
-  <script src="vosk.js"></script>
-  <script src="/vue.js"></script>
+  <!-- Substituir os scripts externos por scripts inline -->
+  <!-- Cole aqui o conteúdo completo de vosk.js (opcional) -->
   <script>
-    const VOSK_MODEL_PATH = "vosk-model-small-pt-0.3"; // coloque o modelo nesta pasta
+    // === VOSK.JS START ===
+    // Cole o conteúdo inteiro de vosk.js abaixo deste comentário (ou mantenha vazio se já o incorporou).
+    // === VOSK.JS END ===
+  </script>
 
-    const app = Vue.createApp({
-      data() {
-        return {
-          recording: false,
-          currentTranscript: "",
-          transcriptHistory:
-            JSON.parse(localStorage.getItem("transcriptHistory")) || [],
-          recognition: null,
-          audioSource: null,
-          audioFile: null,
-          voskReady: false,
-          voskRecognizer: null,
-          voskModel: null,
-          voskSampleRate: 16000,
-          voskWorker: null,
-          useVosk: false,
-        };
-      },
-      mounted() {
-        if ("webkitSpeechRecognition" in window) {
-          this.recognition = new webkitSpeechRecognition();
-          this.recognition.continuous = true;
-          this.recognition.interimResults = true;
-          this.recognition.language = "pt-BR";
-          this.recognition.onresult = (event) => {
-            let transcript = "";
-            let final = "";
-            for (let i = event.resultIndex; i < event.results.length; i++) {
-              const result = event.results[i][0];
-              if (event.results[i].isFinal) {
-                final += result.transcript;
-              } else {
-                transcript += result.transcript;
+  <!-- Removido placeholder Vue.js; agora carregamos dinamicamente se necessário e inicializamos a app -->
+  <script>
+    // Carrega Vue dinamicamente se não estiver presente
+    function ensureVue() {
+      if (window.Vue) return Promise.resolve();
+      return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        // versão de production do Vue 3 (global build)
+        s.src = 'https://unpkg.com/vue@3/dist/vue.global.prod.js';
+        s.onload = () => resolve();
+        s.onerror = (e) => reject(new Error('Falha ao carregar Vue: ' + e));
+        document.head.appendChild(s);
+      });
+    }
+
+    // Inicializa a aplicação (conteúdo movido para dentro da função)
+    async function initApp() {
+      const VOSK_MODEL_PATH = "vosk-model-small-pt-0.3"; // coloque o modelo nesta pasta
+
+      const app = Vue.createApp({
+        data() {
+          return {
+            recording: false,
+            currentTranscript: "",
+            transcriptHistory:
+              JSON.parse(localStorage.getItem("transcriptHistory")) || [],
+            recognition: null,
+            audioSource: null,
+            audioFile: null,
+            voskReady: false,
+            voskRecognizer: null,
+            voskModel: null,
+            voskSampleRate: 16000,
+            voskWorker: null,
+            useVosk: false,
+
+            // Novas props para seleção de microfone
+            audioDevices: [],
+            selectedDeviceId: "",
+            audioStream: null,
+          };
+        },
+        mounted() {
+          if ("webkitSpeechRecognition" in window) {
+            this.recognition = new webkitSpeechRecognition();
+            this.recognition.continuous = true;
+            this.recognition.interimResults = true;
+            this.recognition.language = "pt-BR";
+            this.recognition.onresult = (event) => {
+              let transcript = "";
+              let final = "";
+              for (let i = event.resultIndex; i < event.results.length; i++) {
+                const result = event.results[i][0];
+                if (event.results[i].isFinal) {
+                  final += result.transcript;
+                } else {
+                  transcript += result.transcript;
+                }
+              }
+              this.currentTranscript = transcript;
+              if (final.trim() !== "") {
+                this.transcriptHistory.unshift([
+                  new Date().toLocaleString().split(", ")[1],
+                  final.trim(),
+                ]);
+                this.saveTranscriptHistory();
+              }
+            };
+            this.recognition.onend = () => {
+              if (this.recording) {
+                this.recognition.start();
+              }
+            };
+          } else {
+            // Inicializa Vosk se não houver suporte nativo
+            this.initVosk();
+            this.useVosk = true;
+          }
+          // Tenta popular a lista de microfones ao iniciar
+          this.enumerateAudioDevices();
+        },
+        methods: {
+          async initVosk() {
+            if (window.Vosk) {
+              this.currentTranscript = "Carregando modelo Vosk...";
+              const model = await Vosk.createModel(VOSK_MODEL_PATH);
+              this.voskModel = model;
+              this.voskReady = true;
+              this.currentTranscript = "";
+            } else {
+              this.currentTranscript = "Vosk não carregado. Verifique vosk.js.";
+            }
+          },
+          toggleRecording() {
+            if (this.recording) {
+              this.recording = false;
+              if (this.recognition) {
+                this.recognition.stop();
+              }
+              if (this.useVosk) {
+                this.stopVoskMic();
+              }
+              this.currentTranscript = "";
+            } else {
+              this.recording = true;
+              if (this.recognition) {
+                this.recognition.start();
+              } else if (this.useVosk) {
+                this.startVoskMic();
               }
             }
-            this.currentTranscript = transcript;
-            if (final.trim() !== "") {
-              this.transcriptHistory.unshift([
-                new Date().toLocaleString().split(", ")[1],
-                final.trim(),
-              ]);
-              this.saveTranscriptHistory();
+          },
+          async enumerateAudioDevices() {
+            try {
+              // Para obter labels, precisamos pedir permissão primeiro
+              let ok = false;
+              try {
+                const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+                s.getTracks().forEach(t => t.stop());
+                ok = true;
+              } catch (e) {
+                // permissão negada ou não solicitada; ainda assim tentamos enumerar
+              }
+              const devices = await navigator.mediaDevices.enumerateDevices();
+              this.audioDevices = devices.filter(d => d.kind === "audioinput");
+              // se ainda não houver selectedDeviceId, mantém vazio (padrão)
+              if (!this.selectedDeviceId && this.audioDevices.length > 0 && ok) {
+                // tenta escolher o primeiro por conveniência (opcional)
+                this.selectedDeviceId = "";
+              }
+            } catch (err) {
+              console.error("Erro ao listar dispositivos:", err);
             }
-          };
-          this.recognition.onend = () => {
-            if (this.recording) {
-              this.recognition.start();
+          },
+          stopAudioStream() {
+            if (this.audioStream) {
+              this.audioStream.getTracks().forEach(t => t.stop());
+              this.audioStream = null;
             }
-          };
-        } else {
-          // Inicializa Vosk se não houver suporte nativo
-          this.initVosk();
-          this.useVosk = true;
-        }
-      },
-      methods: {
-        async initVosk() {
-          if (window.Vosk) {
-            this.currentTranscript = "Carregando modelo Vosk...";
-            const model = await Vosk.createModel(VOSK_MODEL_PATH);
-            this.voskModel = model;
-            this.voskReady = true;
-            this.currentTranscript = "";
-          } else {
-            this.currentTranscript = "Vosk não carregado. Verifique vosk.js.";
-          }
-        },
-        toggleRecording() {
-          if (this.recording) {
-            this.recording = false;
-            if (this.recognition) {
-              this.recognition.stop();
+          },
+          async startVoskMic() {
+            if (!this.voskReady) {
+              this.currentTranscript = "Modelo Vosk não carregado ainda.";
+              return;
             }
-            if (this.useVosk) {
-              this.stopVoskMic();
-            }
-            this.currentTranscript = "";
-          } else {
-            this.recording = true;
-            if (this.recognition) {
-              this.recognition.start();
-            } else if (this.useVosk) {
-              this.startVoskMic();
-            }
-          }
-        },
-        async startVoskMic() {
-          if (!this.voskReady) {
-            this.currentTranscript = "Modelo Vosk não carregado ainda.";
-            return;
-          }
-          this.currentTranscript = "Fale agora...";
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          const audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: this.voskSampleRate });
-          const source = audioContext.createMediaStreamSource(stream);
-          const processor = audioContext.createScriptProcessor(4096, 1, 1);
-          source.connect(processor);
-          processor.connect(audioContext.destination);
+            this.currentTranscript = "Fale agora...";
+            // Para usar o microfone selecionado, aplica constraint deviceId
+            const constraints = this.selectedDeviceId
+              ? { audio: { deviceId: { exact: this.selectedDeviceId } } }
+              : { audio: true };
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            // guarda stream para poder parar depois
+            this.stopAudioStream();
+            this.audioStream = stream;
 
-          const recognizer = await this.voskModel.createRecognizer(this.voskSampleRate);
-          this.voskRecognizer = recognizer;
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: this.voskSampleRate });
+            const source = audioContext.createMediaStreamSource(stream);
+            const processor = audioContext.createScriptProcessor(4096, 1, 1);
+            source.connect(processor);
+            processor.connect(audioContext.destination);
 
-          processor.onaudioprocess = (e) => {
-            if (!this.recording) return;
-            const input = e.inputBuffer.getChannelData(0);
-            recognizer.acceptWaveform(input);
-            const result = recognizer.result();
+            const recognizer = await this.voskModel.createRecognizer(this.voskSampleRate);
+            this.voskRecognizer = recognizer;
+
+            processor.onaudioprocess = (e) => {
+              if (!this.recording) return;
+              const input = e.inputBuffer.getChannelData(0);
+              recognizer.acceptWaveform(input);
+              const result = recognizer.result();
+              if (result && result.text) {
+                this.currentTranscript = result.text;
+                if (result.text.trim() !== "") {
+                  this.transcriptHistory.unshift([
+                    new Date().toLocaleString().split(", ")[1],
+                    result.text.trim(),
+                  ]);
+                  this.saveTranscriptHistory();
+                }
+              }
+            };
+
+            this.voskStop = () => {
+              processor.disconnect();
+              source.disconnect();
+              this.stopAudioStream();
+              recognizer.free();
+              audioContext.close();
+            };
+          },
+          stopVoskMic() {
+            if (this.voskStop) {
+              this.voskStop();
+              this.voskStop = null;
+            }
+          },
+          async extractAudioFromVideo(file) {
+            // Extrai áudio de vídeo usando um elemento <video> e OfflineAudioContext
+            return new Promise((resolve, reject) => {
+              const url = URL.createObjectURL(file);
+              const video = document.createElement("video");
+              video.src = url;
+              video.crossOrigin = "anonymous";
+              video.muted = true;
+              video.play();
+              video.oncanplay = async () => {
+                try {
+                  const audioCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, video.duration * 44100, 44100);
+                  const source = audioCtx.createMediaElementSource(video);
+                  source.connect(audioCtx.destination);
+                  await audioCtx.startRendering();
+                  audioCtx.oncomplete = (e) => {
+                    const renderedBuffer = e.renderedBuffer;
+                    // Usar this.encodeWAV (método do mesmo app) em vez de app.config.globalProperties
+                    const wav = this.encodeWAV(renderedBuffer);
+                    resolve(wav);
+                    URL.revokeObjectURL(url);
+                  };
+                } catch (err) {
+                  reject(err);
+                }
+              };
+              video.onerror = reject;
+            });
+          },
+          async selectAudioFile(event) {
+            if (this.audioSource) {
+              try {
+                this.audioSource.stop();
+              } catch (e) { }
+              this.audioSource.disconnect && this.audioSource.disconnect();
+              this.audioSource = null;
+            }
+            this.audioFile = event.target.files[0];
+            if (this.audioFile) {
+              // Extrai áudio se for vídeo
+              let file = this.audioFile;
+              let audioBuffer;
+              if (file.type.startsWith("video/")) {
+                this.currentTranscript = "Extraindo áudio do vídeo...";
+                audioBuffer = await this.extractAudioFromVideo(file);
+              } else {
+                const arrayBuffer = await file.arrayBuffer();
+                audioBuffer = arrayBuffer;
+              }
+              if (this.recognition) {
+                // Não há suporte nativo para transcrição de arquivos, use Vosk
+                this.currentTranscript = "Reconhecimento nativo não suporta arquivos. Usando Vosk.";
+                if (!this.voskReady) await this.initVosk();
+                await this.transcribeWithVosk(audioBuffer);
+              } else if (this.useVosk) {
+                await this.transcribeWithVosk(audioBuffer);
+              }
+            }
+          },
+          async transcribeWithVosk(arrayBuffer) {
+            if (!this.voskReady) {
+              this.currentTranscript = "Modelo Vosk não carregado ainda.";
+              return;
+            }
+            this.currentTranscript = "Transcrevendo...";
+            // Decodifica o áudio para PCM float32
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: this.voskSampleRate });
+            const decoded = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+            const channelData = decoded.getChannelData(0);
+            const recognizer = await this.voskModel.createRecognizer(this.voskSampleRate);
+            recognizer.acceptWaveform(channelData);
+            const result = recognizer.finalResult();
             if (result && result.text) {
               this.currentTranscript = result.text;
               if (result.text.trim() !== "") {
@@ -212,146 +387,59 @@
                 ]);
                 this.saveTranscriptHistory();
               }
-            }
-          };
-
-          this.voskStop = () => {
-            processor.disconnect();
-            source.disconnect();
-            stream.getTracks().forEach(track => track.stop());
-            recognizer.free();
-            audioContext.close();
-          };
-        },
-        stopVoskMic() {
-          if (this.voskStop) {
-            this.voskStop();
-            this.voskStop = null;
-          }
-        },
-        async selectAudioFile(event) {
-          if (this.audioSource) {
-            try {
-              this.audioSource.stop();
-            } catch (e) { }
-            this.audioSource.disconnect && this.audioSource.disconnect();
-            this.audioSource = null;
-          }
-          this.audioFile = event.target.files[0];
-          if (this.audioFile) {
-            // Extrai áudio se for vídeo
-            let file = this.audioFile;
-            let audioBuffer;
-            if (file.type.startsWith("video/")) {
-              this.currentTranscript = "Extraindo áudio do vídeo...";
-              audioBuffer = await this.extractAudioFromVideo(file);
             } else {
-              const arrayBuffer = await file.arrayBuffer();
-              audioBuffer = arrayBuffer;
+              this.currentTranscript = "Nenhum texto reconhecido.";
             }
-            if (this.recognition) {
-              // Não há suporte nativo para transcrição de arquivos, use Vosk
-              this.currentTranscript = "Reconhecimento nativo não suporta arquivos. Usando Vosk.";
-              if (!this.voskReady) await this.initVosk();
-              await this.transcribeWithVosk(audioBuffer);
-            } else if (this.useVosk) {
-              await this.transcribeWithVosk(audioBuffer);
+            recognizer.free();
+            audioCtx.close();
+          },
+          downloadConversation() {
+            if (this.transcriptHistory.length > 0) {
+              const lines = this.transcriptHistory.map(
+                ([time, transcript]) => `[${time}] ${transcript}`
+              );
+              const blob = new Blob([lines.join("\n")], {
+                type: "text/plain",
+              });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "conversation_history.txt";
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
             }
-          }
-        },
-        async extractAudioFromVideo(file) {
-          // Extrai áudio de vídeo usando um elemento <video> e OfflineAudioContext
-          return new Promise((resolve, reject) => {
-            const url = URL.createObjectURL(file);
-            const video = document.createElement("video");
-            video.src = url;
-            video.crossOrigin = "anonymous";
-            video.muted = true;
-            video.play();
-            video.oncanplay = async () => {
-              try {
-                const audioCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, video.duration * 44100, 44100);
-                const source = audioCtx.createMediaElementSource(video);
-                source.connect(audioCtx.destination);
-                await audioCtx.startRendering();
-                audioCtx.oncomplete = (e) => {
-                  const renderedBuffer = e.renderedBuffer;
-                  const wav = app.config.globalProperties.encodeWAV(renderedBuffer);
-                  resolve(wav);
-                  URL.revokeObjectURL(url);
-                };
-              } catch (err) {
-                reject(err);
-              }
-            };
-            video.onerror = reject;
-          });
-        },
-        async transcribeWithVosk(arrayBuffer) {
-          if (!this.voskReady) {
-            this.currentTranscript = "Modelo Vosk não carregado ainda.";
-            return;
-          }
-          this.currentTranscript = "Transcrevendo...";
-          // Decodifica o áudio para PCM float32
-          const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: this.voskSampleRate });
-          const decoded = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
-          const channelData = decoded.getChannelData(0);
-          const recognizer = await this.voskModel.createRecognizer(this.voskSampleRate);
-          recognizer.acceptWaveform(channelData);
-          const result = recognizer.finalResult();
-          if (result && result.text) {
-            this.currentTranscript = result.text;
-            if (result.text.trim() !== "") {
-              this.transcriptHistory.unshift([
-                new Date().toLocaleString().split(", ")[1],
-                result.text.trim(),
-              ]);
-              this.saveTranscriptHistory();
-            }
-          } else {
-            this.currentTranscript = "Nenhum texto reconhecido.";
-          }
-          recognizer.free();
-          audioCtx.close();
-        },
-        downloadConversation() {
-          if (this.transcriptHistory.length > 0) {
-            const lines = this.transcriptHistory.map(
-              ([time, transcript]) => `[${time}] ${transcript}`
+          },
+          clearConversation() {
+            this.transcriptHistory = [];
+            this.saveTranscriptHistory();
+          },
+          saveTranscriptHistory() {
+            localStorage.setItem(
+              "transcriptHistory",
+              JSON.stringify(this.transcriptHistory)
             );
-            const blob = new Blob([lines.join("\n")], {
-              type: "text/plain",
-            });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "conversation_history.txt";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+          },
+          // Utilitário para codificar WAV (caso precise)
+          encodeWAV(buffer) {
+            // ...implemente se necessário...
           }
         },
-        clearConversation() {
-          this.transcriptHistory = [];
-          this.saveTranscriptHistory();
-        },
-        saveTranscriptHistory() {
-          localStorage.setItem(
-            "transcriptHistory",
-            JSON.stringify(this.transcriptHistory)
-          );
-        },
-        // Utilitário para codificar WAV (caso precise)
-        encodeWAV(buffer) {
-          // ...implemente se necessário...
-        }
-      },
-    });
+      });
 
-    app.mount("#app");
+      app.mount("#app");
+    }
+
+    // Garantir Vue e então iniciar a app
+    ensureVue()
+      .then(() => initApp())
+      .catch((err) => {
+        console.error(err);
+        const el = document.getElementById('transcribedText');
+        if (el) el.textContent = "Erro ao carregar dependências: " + err.message;
+      });
   </script>
-</body>
 
+</body>
 </html>
