@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProfEPT &mdash; Portfólio</title>
+<style>
+:root{--accent:#1a5276;--accent2:#2980b9;--bg:#f0f2f5;--card:#fff;--text:#333;--muted:#888}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+header{background:linear-gradient(135deg,#1a5276,#2980b9);color:#fff;padding:1.5rem 2rem;text-align:center}
+header h1{font-size:1.4rem;font-weight:600}
+header .sub{font-size:.82rem;opacity:.85;margin-top:.3rem}
+nav{padding:.8rem 1.5rem;display:flex;gap:.6rem;flex-wrap:wrap;justify-content:center}
+nav a{display:inline-block;background:var(--card);color:var(--accent);text-decoration:none;padding:.5rem 1rem;border-radius:8px;font-size:.85rem;font-weight:500;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid transparent}
+nav a:hover{box-shadow:0 3px 10px rgba(0,0,0,.12);transform:translateY(-1px);border-color:var(--accent2)}
+main{flex:1;max-width:860px;margin:0 auto;padding:1.5rem;width:100%}
+.card{background:var(--card);border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.07);padding:1.3rem 1.5rem;margin-bottom:1rem;border-left:4px solid var(--accent2);transition:all .2s;cursor:pointer;text-decoration:none;color:var(--text);display:block}
+.card:hover{box-shadow:0 4px 14px rgba(0,0,0,.12);transform:translateY(-2px)}
+.card h2{font-size:1rem;color:var(--accent);margin-bottom:.35rem;font-weight:600}
+.card p{font-size:.82rem;color:var(--muted);line-height:1.5}
+.card .tag{display:inline-block;background:#eaf2f8;color:var(--accent2);padding:.12rem .5rem;border-radius:4px;font-size:.7rem;margin-top:.5rem;margin-right:.3rem}
+footer{text-align:center;padding:.8rem;font-size:.72rem;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Portfólio &mdash; ProfEPT</h1>
+  <div class="sub">Mestrado Profissional em Educação Profissional e Tecnológica</div>
+</header>
+
+<main>
+
+  <a class="card" href="arte/">
+    <h2>Estado da Arte &mdash; Levantamento Bibliográfico</h2>
+    <p>Painel interativo com análise bibliométrica da produção acadêmica sobre Educação de Surdos, Libras, Mediação, Colaboração e Tecnologias. Inclui dashboard, análise de lacunas, nuvem de palavras-chave e mapa de calor.</p>
+    <span class="tag">Bibliometria</span>
+    <span class="tag">Educação de Surdos</span>
+    <span class="tag">Libras</span>
+    <span class="tag">Tecnologias</span>
+  </a>
+
+</main>
+
+<footer>
+  &copy; 2026 &mdash; Portfólio ProfEPT
+</footer>
+
+</body>
+</html>
