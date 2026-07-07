@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estado da Arte — Levantamento Bibliográfico</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+:root{--c1:#e74c3c;--c2:#3498db;--c3:#2ecc71;--c4:#9b59b6;--c5:#f39c12;--cr:#95a5a6;--bg:#f0f2f5;--card:#fff;--text:#333;--muted:#888;--accent:#1a5276;--border:#e0e0e0}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+header{background:linear-gradient(135deg,#1a5276,#2980b9);color:#fff;padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem}
+header h1{font-size:1.2rem;font-weight:600}
+header .sub{font-size:.75rem;opacity:.85}
+.btn-export{background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);padding:.4rem .9rem;border-radius:6px;cursor:pointer;font-size:.82rem;transition:background .2s}
+.btn-export:hover{background:rgba(255,255,255,.35)}
+.tabs{display:flex;background:var(--card);border-bottom:2px solid var(--border);padding:0 1.5rem;position:sticky;top:0;z-index:10}
+.tabs button{padding:.7rem 1.2rem;border:none;background:none;cursor:pointer;font-size:.85rem;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s}
+.tabs button:hover{color:var(--accent)}
+.tabs button.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+.controls{display:flex;flex-wrap:wrap;gap:.5rem;padding:.7rem 1.5rem;background:var(--card);border-bottom:1px solid var(--border);align-items:center}
+.controls input[type=text],.controls select{padding:.4rem .7rem;border:1px solid #ccc;border-radius:6px;font-size:.82rem;background:#fff}
+.controls input[type=text]{flex:1;min-width:180px}
+.score-ctrl{display:flex;align-items:center;gap:.35rem;font-size:.82rem;color:var(--muted);white-space:nowrap}
+.score-ctrl input[type=range]{width:80px;cursor:pointer;accent-color:var(--accent)}
+.stats-bar{display:flex;gap:1rem;padding:.5rem 1.5rem;font-size:.78rem;color:var(--muted);background:var(--card);border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:center}
+/* Dashboard */
+#dash{padding:1rem 1.5rem}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.7rem;margin-bottom:.8rem}
+.kpi{background:var(--card);padding:.9rem 1rem;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);text-align:center}
+.kpi .num{font-size:1.7rem;font-weight:700;color:var(--accent)}
+.kpi .label{font-size:.72rem;color:var(--muted);margin-top:.2rem}
+/* Leitura */
+.leitura-card{background:var(--card);border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);padding:.8rem 1.2rem;margin-bottom:.8rem}
+.leitura-card h3{font-size:.82rem;color:var(--accent);margin-bottom:.5rem;font-weight:600}
+.leitura-bar{display:flex;border-radius:6px;overflow:hidden;height:22px;background:#eee}
+.leitura-bar .seg{height:100%;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;transition:width .4s}
+.leitura-legend{display:flex;gap:1.2rem;margin-top:.5rem;font-size:.75rem;color:var(--muted);flex-wrap:wrap}
+.leitura-legend span{display:flex;align-items:center;gap:.3rem}
+.dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+/* Charts */
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:1rem}
+.chart-box{background:var(--card);padding:1rem;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.chart-box h3{font-size:.85rem;color:var(--accent);margin-bottom:.6rem;font-weight:600}
+.chart-box canvas{max-height:280px}
+/* Word cloud */
+.wc-box{background:var(--card);padding:1rem 1.2rem;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);grid-column:1/-1;margin-top:1rem}
+.wc-box h3{font-size:.85rem;color:var(--accent);margin-bottom:.7rem;font-weight:600}
+#wordcloud{display:flex;flex-wrap:wrap;gap:.35rem .55rem;align-items:center;padding:.3rem;min-height:80px}
+.wc-word{cursor:default;line-height:1.4;transition:opacity .15s;border-radius:3px;padding:.05rem .2rem}
+.wc-word:hover{opacity:1!important;background:#eaf2f8}
+.wc-word sup{font-size:.6em;color:var(--muted);margin-left:.1em}
+/* Heatmap */
+.hm-box{background:var(--card);padding:1rem;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-top:1rem;overflow-x:auto}
+.hm-box h3{font-size:.85rem;color:var(--accent);margin-bottom:.6rem;font-weight:600}
+table.heatmap{border-collapse:collapse;width:100%;font-size:.78rem;min-width:500px}
+table.heatmap th{background:#1a5276;color:#fff;padding:.3rem .5rem;text-align:center;white-space:nowrap;font-weight:500}
+table.heatmap th:first-child{text-align:left;min-width:75px}
+table.heatmap td{padding:.28rem .45rem;text-align:center;border:1px solid #e5e5e5;min-width:34px}
+table.heatmap td:first-child{text-align:left;font-weight:500;color:var(--accent);background:#f8f9fa;border:none;cursor:help;white-space:nowrap}
+table.heatmap .hm-zero{color:#ccc;font-size:.72rem}
+table.heatmap tfoot td{font-weight:700;background:#eef2f7;border-top:2px solid #ccc}
+table.heatmap tfoot td:first-child{color:var(--accent)}
+.hm-legend{margin-top:.5rem;font-size:.7rem;color:var(--muted);display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.hm-grad{display:flex;align-items:center;gap:.3rem}
+.hm-swatch{width:60px;height:10px;border-radius:2px;background:linear-gradient(to right,rgba(26,82,118,.08),rgba(26,82,118,.95))}
+/* Análise */
+#analise-view{padding:1rem 1.5rem}
+#analise-view h2{font-size:.95rem;color:var(--accent);margin:0 0 .8rem;padding-bottom:.4rem;border-bottom:2px solid var(--border);font-weight:600}
+.gap-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:.8rem;margin-bottom:1.5rem}
+.gap-card{background:var(--card);border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);padding:1rem;border-top:3px solid var(--accent)}
+.gap-card h4{font-size:.88rem;color:var(--accent);margin-bottom:.2rem;font-weight:600}
+.gap-card .eixo-sub{font-size:.72rem;color:var(--muted);margin-bottom:.6rem;line-height:1.3}
+.gap-stat{font-size:1.5rem;font-weight:700;color:var(--accent);margin-bottom:.5rem}
+.gap-stat span{font-size:.74rem;font-weight:400;color:var(--muted);margin-left:.2rem}
+.gap-item{font-size:.75rem;padding:.22rem 0;border-bottom:1px solid #f2f2f2}
+.gap-warn{color:#c0392b}
+.gap-ok{color:#27ae60}
+.gap-lbl{color:var(--muted);font-size:.7rem}
+/* Cards */
+#cards-view{padding:1rem 1.5rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:.8rem}
+.card{background:var(--card);padding:1rem 1.1rem;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.07);cursor:pointer;transition:all .2s;border-left:3px solid transparent;display:flex;flex-direction:column}
+.card:hover{box-shadow:0 3px 12px rgba(0,0,0,.12);transform:translateY(-1px)}
+.card.e1{border-left-color:var(--c1)}.card.e2{border-left-color:var(--c2)}.card.e3{border-left-color:var(--c3)}.card.e4{border-left-color:var(--c4)}.card.e5{border-left-color:var(--c5)}.card.er{border-left-color:var(--cr)}
+.card h3{font-size:.88rem;margin-bottom:.3rem;color:var(--accent);line-height:1.3;padding-right:2.5rem;position:relative}
+.score-badge{position:absolute;right:0;top:0;background:#1a5276;color:#fff;padding:.1rem .4rem;border-radius:3px;font-size:.68rem;font-weight:600}
+.card .meta{font-size:.74rem;color:var(--muted);margin-bottom:.35rem;display:flex;flex-wrap:wrap;align-items:center;gap:.3rem}
+.st-lido{color:#27ae60;font-weight:600;font-size:.72rem}
+.st-lendo{color:#f39c12;font-weight:600;font-size:.72rem}
+.st-aler{color:#aaa;font-size:.72rem}
+.card .eixos{margin-top:auto;padding-top:.4rem}
+.eixo-tag{display:inline-block;background:#eaf2f8;color:#2980b9;padding:.1rem .4rem;border-radius:3px;font-size:.68rem;margin:.1rem .1rem}
+.card .resumo{display:none;margin-top:.6rem;padding-top:.6rem;border-top:1px solid var(--border);font-size:.79rem;line-height:1.5;color:#555;max-height:170px;overflow-y:auto}
+.card.open .resumo{display:block}
+.card .dlink{font-size:.72rem;color:#2980b9;margin-top:.4rem;cursor:pointer;text-decoration:underline;display:inline-block}
+.load-more-row{grid-column:1/-1;text-align:center;padding:1rem}
+.btn-load{background:var(--accent);color:#fff;border:none;padding:.5rem 1.6rem;border-radius:6px;cursor:pointer;font-size:.84rem;transition:background .2s}
+.btn-load:hover{background:#2471a3}
+/* Table */
+#table-view{padding:1rem 1.5rem;overflow-x:auto}
+#table-view table{width:100%;border-collapse:collapse;font-size:.81rem;background:var(--card);border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+#table-view th{background:#1a5276;color:#fff;padding:.5rem .65rem;text-align:left;cursor:pointer;white-space:nowrap;user-select:none;position:sticky;top:0}
+#table-view th:hover{background:#2471a3}
+#table-view th .sorter{font-size:.68rem;margin-left:3px}
+#table-view td{padding:.38rem .65rem;border-bottom:1px solid var(--border);max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#table-view tr:hover td{background:#f5f8fa;cursor:pointer}
+.td-ex span{display:inline-block;background:#eaf2f8;color:#2980b9;padding:.06rem .28rem;border-radius:3px;margin:1px 2px;white-space:nowrap;font-size:.68rem}
+/* Modal */
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:100;overflow-y:auto}
+.modal.open{display:flex;align-items:flex-start;justify-content:center;padding:2rem}
+.modal-c{background:var(--card);border-radius:10px;padding:1.5rem 2rem;max-width:780px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 8px 30px rgba(0,0,0,.2)}
+.modal-c h2{font-size:1.05rem;color:var(--accent);margin-bottom:.4rem;padding-right:2.5rem;line-height:1.35}
+.modal-c .mm{font-size:.78rem;color:var(--muted);margin-bottom:.8rem}
+.modal-c .f{margin-bottom:.5rem}
+.modal-c .f strong{font-size:.76rem;color:#555;display:block;margin-bottom:.1rem}
+.modal-c .f span{font-size:.83rem;line-height:1.5;white-space:pre-wrap}
+.modal-c a{color:#2980b9;word-break:break-all}
+.modal-close{float:right;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--muted);padding:0 .3rem;line-height:1}
+.modal-close:hover{color:var(--text)}
+.loading,.empty{text-align:center;padding:3rem;color:var(--muted);grid-column:1/-1}
+.hidden{display:none!important}
+@media(max-width:700px){.charts{grid-template-columns:1fr}#cards-view{grid-template-columns:1fr;padding:.8rem}.modal-c{padding:1rem 1.2rem}.gap-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>Estado da Arte &mdash; Levantamento Bibliográfico</h1><div class="sub">Educação de Surdos, Libras, Mediação, Colaboração e Tecnologias</div></div>
+  <button class="btn-export" onclick="exportCSV()">&#8595; Exportar CSV</button>
+</header>
+<div class="tabs">
+  <button data-tab="dash" class="active" onclick="switchTab('dash')">Dashboard</button>
+  <button data-tab="analise" onclick="switchTab('analise')">Análise</button>
+  <button data-tab="cards" onclick="switchTab('cards')">Cards</button>
+  <button data-tab="table" onclick="switchTab('table')">Tabela</button>
+</div>
+<div class="controls">
+  <input type="text" id="busca" placeholder="Buscar título, autor, resumo, palavras-chave...">
+  <select id="filtro-eixo"><option value="">Todos os eixos</option></select>
+  <select id="filtro-ano"><option value="">Todos os anos</option></select>
+  <select id="filtro-tipo"><option value="">Todos os tipos</option></select>
+  <select id="filtro-regiao"><option value="">Todas as regiões</option></select>
+  <select id="filtro-inst"><option value="">Todas as instituições</option></select>
+  <div class="score-ctrl">
+    <label for="filtro-score">Score&nbsp;&#8805;</label>
+    <input type="range" id="filtro-score" min="0" max="40" value="0" step="1" oninput="document.getElementById('score-val').textContent=this.value;refreshAll()">
+    <span id="score-val">0</span>
+  </div>
+</div>
+<div class="stats-bar" id="stats">Carregando...</div>
+
+<div id="dash">
+  <div id="kpi-row" class="kpi-row"></div>
+  <div class="leitura-card">
+    <h3>Progresso de Leitura</h3>
+    <div id="leitura-bar" class="leitura-bar"></div>
+    <div id="leitura-legend" class="leitura-legend"></div>
+  </div>
+  <div class="charts">
+    <div class="chart-box"><h3>Distribuição por Eixo</h3><canvas id="chart-eixo"></canvas></div>
+    <div class="chart-box"><h3>Publicações por Ano</h3><canvas id="chart-ano"></canvas></div>
+    <div class="chart-box"><h3>Tipo de Material</h3><canvas id="chart-tipo"></canvas></div>
+    <div class="chart-box"><h3>Distribuição por Região</h3><canvas id="chart-regiao"></canvas></div>
+    <div class="chart-box" style="grid-column:1/-1"><h3>Top 15 Instituições</h3><canvas id="chart-inst"></canvas></div>
+  </div>
+  <div class="wc-box">
+    <h3>Nuvem de Palavras-chave <small style="font-weight:400;color:var(--muted);font-size:.78rem">(top 60 termos)</small></h3>
+    <div id="wordcloud"></div>
+  </div>
+  <div class="hm-box">
+    <h3>Mapa de Calor: Eixos &times; Ano</h3>
+    <div id="heatmap-container"></div>
+  </div>
+</div>
+
+<div id="analise-view" class="hidden">
+  <h2>Lacunas por Eixo Temático</h2>
+  <div id="gap-analysis"></div>
+  <h2>Cobertura Comparativa (Radar)</h2>
+  <div class="charts" style="margin-bottom:1.5rem">
+    <div class="chart-box"><h3>Maturidade por Eixo</h3><canvas id="chart-radar"></canvas></div>
+    <div class="chart-box"><h3>Distribuição de Scores</h3><canvas id="chart-score-dist"></canvas></div>
+    <div class="chart-box" style="grid-column:1/-1"><h3>Média de Sub-scores por Eixo</h3><canvas id="chart-subscores"></canvas></div>
+  </div>
+</div>
+
+<div id="cards-view" class="hidden"></div>
+<div id="table-view" class="hidden"></div>
+
+<div class="modal" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-c" id="modal-content"></div>
+</div>
+
+<script>
+let DATA=[],charts={},_filtered=[],_cardsPage=1,_activeTab='dash';
+const CARDS_PER_PAGE=30;
+const EIXOS=['Eixo 1','Eixo 2','Eixo 3','Eixo 4','Eixo 5','Eixo Referências'];
+const CP=['#e74c3c','#3498db','#2ecc71','#9b59b6','#f39c12','#95a5a6','#bdc3c7'];
+const EC={Eixo1:'e1',Eixo2:'e2',Eixo3:'e3',Eixo4:'e4',Eixo5:'e5',Referencias:'er'};
+const FL={t:'Título',a:'Autor(es)',ano:'Ano',inst:'Instituição',tp:'Tipo',ppg:'Programa',ac:'Área',lp:'Linha',or:'Orientador',kw:'Palavras-chave',rg:'Região',lk:'Link',rs:'Resumo',ln:'Idioma',ir:'Relevância',st:'Status',pr:'Prioridade',et:'Eixo Temático',org:'Organização',pp:'Problema',oc:'Objetivo',rsl:'Resultados',mt:'Metodologia',sj:'Sujeitos',ne:'Nível de Ensino',aa:'Área de Aplicação',mp:'Mediação Pedagógica',cc:'Circulação',ab:'Abordagem Comunicativa',sc:'Score Total',sa:'Score Alinhamento',sm:'Score Metodologia',sr:'Score Recência',sp:'Score Potencial PE'};
+const STOPWORDS=new Set(['para','com','uma','que','dos','das','das','por','nas','nos','não','são','mais','sobre','como','seus','suas','este','esta','esse','essa','entre','pelo','pela','pelas','pelos','num','numa','sem','ter','ser','foi','seu','sua','isto','isso','aqui','ali','também','ainda','quando','onde','qual','quais','todos','todas','cada','muito','muita','muitos','muitas','sendo','tendo','fazer','feito','pela','pelos','neste','nesta','nesse','nessa','após','antes','desde','até','sobre','entre','como','porque','pois','mas','porém']);
+let _eixoNames={};
+
+async function init(){
+  try{const r=await fetch('pesquisa.json');DATA=await r.json();}
+  catch(e){document.getElementById('stats').textContent='Erro ao carregar pesquisa.json.';return;}
+
+  DATA.forEach(d=>{
+    if(d.ex){
+      const first=d.ex[0];
+      d._en=first.replace(/^Eixo (\d+|Referências).*/,'$1');
+      d._ec=EC['Eixo'+d._en]||'';
+      d.ex.forEach(e=>{
+        const m=e.match(/^(Eixo \d+|Referências)\s*[—\-]?\s*(.*)/);
+        if(m&&m[2]&&!_eixoNames[m[1]])_eixoNames[m[1]]=m[2].trim();
+      });
+    }
+  });
+
+  const ss={eixo:new Set(),ano:new Set(),tp:new Set(),rg:new Set(),inst:new Set()};
+  DATA.forEach(d=>{
+    if(d.ex)d.ex.forEach(e=>ss.eixo.add(e));
+    if(d.ano)ss.ano.add(d.ano);
+    if(d.tp)ss.tp.add(d.tp);
+    if(d.rg)ss.rg.add(d.rg);
+    if(d.inst)ss.inst.add(d.inst);
+  });
+  po('filtro-eixo',[...ss.eixo].sort());
+  po('filtro-ano',[...ss.ano].sort((a,b)=>b-a));
+  po('filtro-tipo',[...ss.tp].sort());
+  po('filtro-regiao',[...ss.rg].sort());
+  po('filtro-inst',[...ss.inst].sort());
+
+  const maxSc=Math.max(...DATA.map(d=>d.sc||0),1);
+  document.getElementById('filtro-score').max=maxSc;
+
+  ['busca','filtro-eixo','filtro-ano','filtro-tipo','filtro-regiao','filtro-inst'].forEach(id=>{
+    document.getElementById(id).addEventListener(id==='busca'?'input':'change',()=>refreshAll());
+  });
+
+  loadFiltersFromURL();
+  refreshAll();
+}
+
+function po(id,opts){
+  const s=document.getElementById(id);
+  opts.forEach(o=>{const el=document.createElement('option');el.value=o;el.textContent=o;s.appendChild(el);});
+}
+
+function gf(){
+  const b=document.getElementById('busca').value.toLowerCase().trim();
+  const ex=document.getElementById('filtro-eixo').value;
+  const an=document.getElementById('filtro-ano').value;
+  const tp=document.getElementById('filtro-tipo').value;
+  const rg=document.getElementById('filtro-regiao').value;
+  const ins=document.getElementById('filtro-inst').value;
+  const sc=parseInt(document.getElementById('filtro-score').value)||0;
+  let f=DATA;
+  if(ex)f=f.filter(d=>d.ex&&d.ex.includes(ex));
+  if(an)f=f.filter(d=>d.ano===an);
+  if(tp)f=f.filter(d=>d.tp===tp);
+  if(rg)f=f.filter(d=>d.rg===rg);
+  if(ins)f=f.filter(d=>d.inst===ins);
+  if(sc>0)f=f.filter(d=>(d.sc||0)>=sc);
+  if(b)f=f.filter(d=>[d.t,d.a,d.rs,d.kw,d.or,d.inst,d.ppg].filter(Boolean).join(' ').toLowerCase().includes(b));
+  return f;
+}
+
+function refreshAll(){
+  _filtered=gf();
+  _cardsPage=1;
+  const n=_filtered.length;
+  const sc=parseInt(document.getElementById('filtro-score').value)||0;
+  document.getElementById('stats').innerHTML=
+    '<span><strong>'+n+'</strong> de '+DATA.length+' registros</span>'+
+    (sc>0?'<span style="color:var(--accent)">Score &ge; '+sc+'</span>':'');
+  saveFiltersToURL();
+  if(_activeTab==='dash')buildDash(_filtered);
+  else if(_activeTab==='analise')buildAnalise(_filtered);
+  else if(_activeTab==='cards')buildCards(_filtered,true);
+  else buildTable(_filtered);
+}
+
+function switchTab(tab){
+  _activeTab=tab;
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  ['dash','analise-view','cards-view','table-view'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  if(tab==='dash'){document.getElementById('dash').classList.remove('hidden');buildDash(_filtered);}
+  else if(tab==='analise'){document.getElementById('analise-view').classList.remove('hidden');buildAnalise(_filtered);}
+  else if(tab==='cards'){document.getElementById('cards-view').classList.remove('hidden');buildCards(_filtered,true);}
+  else{document.getElementById('table-view').classList.remove('hidden');buildTable(_filtered);}
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────
+function dc(){Object.keys(charts).forEach(k=>{try{charts[k].destroy();}catch(_){}});charts={};}
+
+function buildDash(f){
+  const tot=f.length;
+  const anos=[...new Set(f.map(d=>d.ano).filter(Boolean))].sort();
+  const ar=anos.length?anos[0]+'–'+anos[anos.length-1]:'-';
+  const avgSc=tot?Math.round(f.reduce((s,d)=>s+(d.sc||0),0)/tot):0;
+
+  document.getElementById('kpi-row').innerHTML=
+    kpi(tot,'Registros')+
+    kpi(anos.length,'Anos ('+ar+')')+
+    kpi(new Set(f.map(d=>d.inst).filter(Boolean)).size,'Instituições')+
+    kpi(new Set(f.map(d=>d.a).filter(Boolean)).size,'Autores')+
+    kpi(avgSc,'Score Médio');
+
+  const lido=f.filter(d=>d.st&&d.st.toLowerCase()==='lido').length;
+  const lendo=f.filter(d=>d.st&&d.st.toLowerCase()==='lendo').length;
+  const aLer=tot-lido-lendo;
+  document.getElementById('leitura-bar').innerHTML=
+    seg(lido,tot,'#27ae60','Lido')+seg(lendo,tot,'#f39c12','Lendo')+seg(aLer,tot,'#bdc3c7','A ler');
+  document.getElementById('leitura-legend').innerHTML=
+    '<span><span class="dot" style="background:#27ae60"></span>Lido: '+lido+'</span>'+
+    '<span><span class="dot" style="background:#f39c12"></span>Lendo: '+lendo+'</span>'+
+    '<span><span class="dot" style="background:#bdc3c7"></span>A ler: '+aLer+'</span>';
+
+  dc();
+
+  const exD=EIXOS.map(l=>{let c=0;f.forEach(d=>{if(d.ex&&d.ex.some(e=>e.startsWith(l)))c++;});return c;});
+  charts.eixo=new Chart(document.getElementById('chart-eixo'),{type:'bar',
+    data:{labels:EIXOS,datasets:[{data:exD,backgroundColor:CP}]},
+    options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}}}});
+
+  const am={};f.forEach(d=>{if(d.ano)am[d.ano]=(am[d.ano]||0)+1;});
+  const as=Object.entries(am).sort((a,b)=>parseInt(a[0])-parseInt(b[0]));
+  charts.ano=new Chart(document.getElementById('chart-ano'),{type:'bar',
+    data:{labels:as.map(a=>a[0]),datasets:[{data:as.map(a=>a[1]),backgroundColor:'#2980b9',label:'Publicações'}]},
+    options:{responsive:true,plugins:{legend:{display:false}}}});
+
+  const tm={};f.forEach(d=>{if(d.tp)tm[d.tp]=(tm[d.tp]||0)+1;});
+  const ts2=Object.entries(tm).sort((a,b)=>b[1]-a[1]);
+  charts.tipo=new Chart(document.getElementById('chart-tipo'),{type:'doughnut',
+    data:{labels:ts2.map(t=>t[0]),datasets:[{data:ts2.map(t=>t[1]),backgroundColor:CP}]},
+    options:{responsive:true,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10}}}}}});
+
+  const rm={};f.forEach(d=>{if(d.rg)rm[d.rg]=(rm[d.rg]||0)+1;});
+  const rs=Object.entries(rm).sort((a,b)=>b[1]-a[1]);
+  const rc={Norte:'#2ecc71',Nordeste:'#f39c12','Centro-Oeste':'#9b59b6',Sudeste:'#3498db',Sul:'#e74c3c',Nacional:'#95a5a6'};
+  charts.regiao=new Chart(document.getElementById('chart-regiao'),{type:'bar',
+    data:{labels:rs.map(r=>r[0]),datasets:[{data:rs.map(r=>r[1]),backgroundColor:rs.map(r=>rc[r[0]]||'#bdc3c7')}]},
+    options:{responsive:true,plugins:{legend:{display:false}}}});
+
+  const im={};f.forEach(d=>{if(d.inst)im[d.inst]=(im[d.inst]||0)+1;});
+  const it=Object.entries(im).sort((a,b)=>b[1]-a[1]).slice(0,15);
+  charts.inst=new Chart(document.getElementById('chart-inst'),{type:'bar',
+    data:{labels:it.map(i=>i[0].length>52?i[0].slice(0,49)+'...':i[0]),datasets:[{data:it.map(i=>i[1]),backgroundColor:'#2980b9'}]},
+    options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}}}});
+
+  buildWordCloud(f);
+  buildHeatmap(f);
+}
+
+function kpi(n,lbl){return '<div class="kpi"><div class="num">'+n+'</div><div class="label">'+lbl+'</div></div>';}
+function seg(n,tot,clr,lbl){const p=tot?Math.round(n/tot*100):0;return p?'<div class="seg" style="width:'+p+'%;background:'+clr+'" title="'+lbl+': '+n+' ('+p+'%)">'+p+'%</div>':'';}
+
+function buildWordCloud(f){
+  const freq={};
+  f.forEach(d=>{
+    if(!d.kw)return;
+    d.kw.split(/[,;|]+/).forEach(k=>{
+      k=k.trim().toLowerCase().replace(/[()[\]{}'"]/g,'').replace(/\s+/g,' ').trim();
+      if(k.length<3||STOPWORDS.has(k)||/^\d+$/.test(k))return;
+      freq[k]=(freq[k]||0)+1;
+    });
+  });
+  const sorted=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,60);
+  const el=document.getElementById('wordcloud');
+  if(!sorted.length){el.innerHTML='<span style="color:var(--muted)">Sem dados de palavras-chave</span>';return;}
+  const max=sorted[0][1];
+  const clrs=['#1a5276','#2980b9','#1a8a4a','#8e44ad','#c0392b','#d68910','#117a65','#6c3483','#154360','#1b5e20'];
+  el.innerHTML=sorted.map(([w,c],i)=>{
+    const sz=(0.72+((c/max)*1.65)).toFixed(2);
+    const op=(0.45+((c/max)*0.55)).toFixed(2);
+    return '<span class="wc-word" title="'+escH(w)+': '+c+' ocorrências" style="font-size:'+sz+'rem;opacity:'+op+';color:'+clrs[i%clrs.length]+'">'+escH(w)+'<sup>'+c+'</sup></span>';
+  }).join(' ');
+}
+
+function buildHeatmap(f){
+  const allAnos=[...new Set(f.map(d=>d.ano).filter(Boolean))].sort();
+  if(!allAnos.length){document.getElementById('heatmap-container').innerHTML='<p style="color:var(--muted);padding:.5rem">Sem dados suficientes.</p>';return;}
+  const mat={};
+  EIXOS.forEach(e=>{mat[e]={};allAnos.forEach(a=>{mat[e][a]=0;});});
+  f.forEach(d=>{
+    if(!d.ex||!d.ano)return;
+    d.ex.forEach(ex=>{EIXOS.forEach(ei=>{if(ex.startsWith(ei))mat[ei][d.ano]++;});});
+  });
+  const maxV=Math.max(...EIXOS.flatMap(e=>allAnos.map(a=>mat[e][a])),1);
+
+  let h='<table class="heatmap"><thead><tr><th>Eixo</th>';
+  allAnos.forEach(a=>h+='<th>'+a+'</th>');
+  h+='<th>Total</th></tr></thead><tbody>';
+  EIXOS.forEach((ei,idx)=>{
+    const tot=allAnos.reduce((s,a)=>s+mat[ei][a],0);
+    const label=ei.replace('Referências','Refs.');
+    const desc=_eixoNames[ei]?ei+': '+_eixoNames[ei]:ei;
+    h+='<tr><td title="'+escH(desc)+'">'+escH(label)+'</td>';
+    allAnos.forEach(a=>{
+      const v=mat[ei][a];
+      const intensity=v/maxV;
+      const bg='rgba(26,82,118,'+(0.07+intensity*0.88).toFixed(2)+')';
+      const fg=intensity>0.45?'#fff':'#333';
+      h+='<td style="background:'+bg+';color:'+fg+'"'+(v===0?' class="hm-zero"':'')+'>'+(v||'·')+'</td>';
+    });
+    h+='<td style="font-weight:600;color:var(--accent)">'+tot+'</td></tr>';
+  });
+  h+='</tbody><tfoot><tr><td>Total</td>';
+  allAnos.forEach(a=>{h+='<td>'+EIXOS.reduce((s,e)=>s+mat[e][a],0)+'</td>';});
+  h+='<td>'+f.length+'</td></tr></tfoot></table>';
+  h+='<div class="hm-legend">Passe o mouse sobre o nome do eixo para ver a descrição completa.'+
+    '<span class="hm-grad"><span style="font-size:.7rem">0</span><span class="hm-swatch"></span><span style="font-size:.7rem">máx ('+maxV+')</span></span></div>';
+  document.getElementById('heatmap-container').innerHTML=h;
+}
+
+// ── ANÁLISE ───────────────────────────────────────────────────────────────
+function buildAnalise(f){
+  buildGapAnalysis(f);
+  buildRadar(f);
+  buildScoreDist(f);
+  buildSubscores(f);
+}
+
+function buildGapAnalysis(f){
+  const allAnos=[...new Set(DATA.map(d=>d.ano).filter(Boolean))].sort();
+  const allTp=[...new Set(DATA.map(d=>d.tp).filter(Boolean))];
+  const allRg=[...new Set(DATA.map(d=>d.rg).filter(Boolean))];
+  let h='<div class="gap-grid">';
+  EIXOS.forEach((ei,idx)=>{
+    const docs=f.filter(d=>d.ex&&d.ex.some(e=>e.startsWith(ei)));
+    const n=docs.length;
+    const docAnos=new Set(docs.map(d=>d.ano).filter(Boolean));
+    const docTp=new Set(docs.map(d=>d.tp).filter(Boolean));
+    const docRg=new Set(docs.map(d=>d.rg).filter(Boolean));
+    const anosGap=allAnos.filter(a=>!docAnos.has(a));
+    const tpGap=allTp.filter(t=>!docTp.has(t));
+    const rgGap=allRg.filter(r=>!docRg.has(r));
+    const lidos=docs.filter(d=>d.st&&d.st.toLowerCase()==='lido').length;
+    const avgSc=n?Math.round(docs.reduce((s,d)=>s+(d.sc||0),0)/n):0;
+    const desc=_eixoNames[ei]||'';
+    h+='<div class="gap-card" style="border-top-color:'+CP[idx]+'">'
+      +'<h4>'+escH(ei)+'</h4>'
+      +(desc?'<div class="eixo-sub">'+escH(desc)+'</div>':'')
+      +'<div class="gap-stat">'+n+'<span>publicações</span></div>'
+      +'<div class="gap-item"><span class="gap-lbl">Score médio: </span><strong>'+avgSc+'</strong></div>'
+      +'<div class="gap-item"><span class="gap-lbl">Progresso: </span>'+lidos+' lidos'+(n?' ('+Math.round(lidos/n*100)+'%)':'')+'</div>'
+      +(anosGap.length
+        ?'<div class="gap-item gap-warn">&#9888; Anos sem publicação: '+escH(anosGap.join(', '))+'</div>'
+        :'<div class="gap-item gap-ok">&#10003; Cobertura temporal completa</div>')
+      +(tpGap.length
+        ?'<div class="gap-item gap-warn">&#9888; Tipos ausentes: '+escH(tpGap.join(', '))+'</div>'
+        :'<div class="gap-item gap-ok">&#10003; Todos os tipos representados</div>')
+      +(rgGap.length
+        ?'<div class="gap-item gap-warn">&#9888; Regiões ausentes: '+escH(rgGap.join(', '))+'</div>'
+        :'<div class="gap-item gap-ok">&#10003; Cobertura regional completa</div>')
+      +'</div>';
+  });
+  h+='</div>';
+  document.getElementById('gap-analysis').innerHTML=h;
+}
+
+function buildRadar(f){
+  const allAnos=[...new Set(f.map(d=>d.ano).filter(Boolean))];
+  const allTp=[...new Set(f.map(d=>d.tp).filter(Boolean))];
+  const allRg=[...new Set(f.map(d=>d.rg).filter(Boolean))];
+  const maxN=Math.max(...EIXOS.map(ei=>f.filter(d=>d.ex&&d.ex.some(e=>e.startsWith(ei))).length),1);
+  const maxSc=Math.max(...DATA.map(d=>d.sc||0),1);
+  const datasets=EIXOS.slice(0,5).map((ei,i)=>{
+    const docs=f.filter(d=>d.ex&&d.ex.some(e=>e.startsWith(ei)));
+    const n=docs.length;
+    const empty=[0,0,0,0,0];
+    if(!n)return{label:ei,data:empty,backgroundColor:CP[i]+'33',borderColor:CP[i],borderWidth:1.5,pointRadius:2};
+    const docAnos=new Set(docs.map(d=>d.ano).filter(Boolean));
+    const docTp=new Set(docs.map(d=>d.tp).filter(Boolean));
+    const docRg=new Set(docs.map(d=>d.rg).filter(Boolean));
+    const avgSc=docs.reduce((s,d)=>s+(d.sc||0),0)/n;
+    return{label:ei,data:[
+      Math.round(n/maxN*100),
+      Math.round(docAnos.size/Math.max(allAnos.length,1)*100),
+      Math.round(docTp.size/Math.max(allTp.length,1)*100),
+      Math.round(docRg.size/Math.max(allRg.length,1)*100),
+      Math.round(avgSc/maxSc*100)
+    ],backgroundColor:CP[i]+'33',borderColor:CP[i],borderWidth:2,pointRadius:3};
+  });
+  if(charts.radar)charts.radar.destroy();
+  charts.radar=new Chart(document.getElementById('chart-radar'),{type:'radar',
+    data:{labels:['Volume','Cobert. temporal','Diversid. tipos','Cobert. regional','Score médio'],datasets},
+    options:{responsive:true,scales:{r:{min:0,max:100,ticks:{stepSize:25,font:{size:9}},pointLabels:{font:{size:10}}}},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10}}}}}});
+}
+
+function buildScoreDist(f){
+  const bkt={};
+  for(let i=0;i<=40;i+=5)bkt[i]=0;
+  f.forEach(d=>{const b=Math.floor((d.sc||0)/5)*5;if(bkt[b]!==undefined)bkt[b]++;});
+  const lbs=Object.keys(bkt).sort((a,b)=>a-b).map(k=>k+'-'+(+k+4));
+  const vals=Object.keys(bkt).sort((a,b)=>a-b).map(k=>bkt[k]);
+  if(charts.scoreDist)charts.scoreDist.destroy();
+  charts.scoreDist=new Chart(document.getElementById('chart-score-dist'),{type:'bar',
+    data:{labels:lbs,datasets:[{label:'Publicações',data:vals,backgroundColor:'#2980b9'}]},
+    options:{responsive:true,plugins:{legend:{display:false}},
+      scales:{x:{title:{display:true,text:'Faixa de Score'}},y:{title:{display:true,text:'Qtd'},beginAtZero:true}}}});
+}
+
+function buildSubscores(f){
+  const ks=['sa','sm','sr','sp'];
+  const klbls=['Alinhamento','Metodologia','Recência','Potencial PE'];
+  const datasets=ks.map((k,i)=>({label:klbls[i],
+    data:EIXOS.slice(0,5).map(ei=>{
+      const docs=f.filter(d=>d.ex&&d.ex.some(e=>e.startsWith(ei)));
+      return docs.length?+(docs.reduce((s,d)=>s+(parseInt(d[k])||0),0)/docs.length).toFixed(1):0;
+    }),backgroundColor:CP[i]}));
+  if(charts.subscores)charts.subscores.destroy();
+  charts.subscores=new Chart(document.getElementById('chart-subscores'),{type:'bar',
+    data:{labels:EIXOS.slice(0,5),datasets},
+    options:{responsive:true,scales:{x:{stacked:true},y:{stacked:true,title:{display:true,text:'Média dos sub-scores'}}},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10}}}}}});
+}
+
+// ── CARDS ─────────────────────────────────────────────────────────────────
+function buildCards(f,reset){
+  if(reset)_cardsPage=1;
+  const c=document.getElementById('cards-view');
+  const shown=f.slice(0,_cardsPage*CARDS_PER_PAGE);
+  const hasMore=f.length>_cardsPage*CARDS_PER_PAGE;
+  let h='';
+  shown.forEach(d=>{
+    const tit=d.t||'(sem título)',au=d.a||'',an=d.ano||'',tp=d.tp||'';
+    const rs=d.rs||'';
+    const rsC=rs.length>300?rs.slice(0,300)+'…':rs;
+    const eCls=d._ec||'';
+    const eTags=d.ex?d.ex.map(e=>'<span class="eixo-tag">'+escH(e)+'</span>').join(''):'';
+    const stCls=d.st?(/lido/i.test(d.st)?'st-lido':/lendo/i.test(d.st)?'st-lendo':'st-aler'):'';
+    h+='<div class="card '+eCls+'" onclick="this.classList.toggle(\'open\')">'
+      +'<h3>'+escH(tit)+(d.sc?'<span class="score-badge">'+d.sc+'</span>':'')+'</h3>'
+      +'<div class="meta"><span>'+escH([au,an,tp].filter(Boolean).join(' · '))+'</span>'+(d.st?'<span class="'+stCls+'">'+escH(d.st)+'</span>':'')+'</div>'
+      +(eTags?'<div class="eixos">'+eTags+'</div>':'')
+      +(rsC?'<div class="resumo">'+escH(rsC)+'</div>':'')
+      +'<span class="dlink" onclick="event.stopPropagation();openDetail(\''+escId(d.id)+'\')">Ver detalhes &rarr;</span>'
+      +'</div>';
+  });
+  if(hasMore){
+    const rem=f.length-_cardsPage*CARDS_PER_PAGE;
+    h+='<div class="load-more-row"><button class="btn-load" onclick="loadMoreCards()">Carregar mais '+Math.min(CARDS_PER_PAGE,rem)+' ('+rem+' restantes)</button></div>';
+  }
+  c.innerHTML=h||'<div class="empty">Nenhum registro encontrado.</div>';
+}
+
+function loadMoreCards(){_cardsPage++;buildCards(_filtered,false);}
+
+// ── TABLE ─────────────────────────────────────────────────────────────────
+let _ts={col:null,asc:true};
+function buildTable(f){
+  const c=document.getElementById('table-view');
+  const cols=['t','a','ano','tp','inst','ex','sc','st'];
+  const lbs={t:'Título',a:'Autor',ano:'Ano',tp:'Tipo',inst:'Instituição',ex:'Eixos',sc:'Score',st:'Status'};
+  let h='<table><thead><tr>';
+  cols.forEach(col=>{
+    const ar=_ts.col===col?(_ts.asc?' ▲':' ▼'):'';
+    h+='<th onclick="sortTable(\''+col+'\')">'+lbs[col]+'<span class="sorter">'+ar+'</span></th>';
+  });
+  h+='</tr></thead><tbody>';
+  f.slice(0,500).forEach(d=>{
+    const eTags=d.ex?d.ex.map(e=>'<span>'+escH(e)+'</span>').join(''):'';
+    const stCls=d.st?(/lido/i.test(d.st)?'st-lido':/lendo/i.test(d.st)?'st-lendo':''):'';
+    h+='<tr onclick="openDetail(\''+escId(d.id)+'\')">'
+      +'<td title="'+escH(d.t||'')+'">'+escH((d.t||'').slice(0,85))+'</td>'
+      +'<td>'+escH(d.a||'')+'</td>'
+      +'<td>'+escH(d.ano||'')+'</td>'
+      +'<td>'+escH(d.tp||'')+'</td>'
+      +'<td title="'+escH(d.inst||'')+'">'+escH((d.inst||'').slice(0,40))+'</td>'
+      +'<td class="td-ex">'+eTags+'</td>'
+      +'<td style="text-align:center;font-weight:600;color:var(--accent)">'+(d.sc||0)+'</td>'
+      +'<td class="'+stCls+'">'+escH(d.st||'')+'</td>'
+      +'</tr>';
+  });
+  h+='</tbody></table>';
+  if(f.length>500)h+='<div class="empty" style="grid-column:1/-1">Mostrando 500 de '+f.length+'. Refine os filtros.</div>';
+  c.innerHTML=h;
+}
+
+function sortTable(col){
+  if(_ts.col===col)_ts.asc=!_ts.asc;else{_ts.col=col;_ts.asc=true;}
+  const srt=_ts.asc?1:-1;
+  if(col==='ex')_filtered.sort((a,b)=>((a.ex||[]).join()).localeCompare((b.ex||[]).join())*srt);
+  else if(col==='sc')_filtered.sort((a,b)=>((a.sc||0)-(b.sc||0))*srt);
+  else _filtered.sort((a,b)=>String(a[col]||'').localeCompare(String(b[col]||''))*srt);
+  buildTable(_filtered);
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────────────
+function openDetail(id){
+  document.getElementById('modal').classList.add('open');
+  document.getElementById('modal-content').innerHTML='<div class="loading">Carregando...</div>';
+  const rec=DATA.find(d=>String(d.id)===String(id));
+  if(!rec){document.getElementById('modal-content').innerHTML='<p>Não encontrado.</p>';return;}
+  const m={...rec};
+  let h='<button class="modal-close" onclick="closeModal()">&times;</button>'
+    +'<h2>'+escH(m.t||'(sem título)')+'</h2>'
+    +'<div class="mm">'+[m.a,m.ano,m.tp,m.inst].filter(Boolean).map(escH).join(' · ')+'</div>';
+  if(rec.ex)h+='<div class="f"><strong>Eixos</strong><span>'+rec.ex.map(e=>'<span class="eixo-tag">'+escH(e)+'</span>').join(' ')+'</span></div>';
+  const order=['rs','kw','or','ppg','ac','lp','rg','lk','ln','ir','st','pr','et','pp','oc','rsl','mt','sj','ne','aa','mp','cc','ab','sc','sa','sm','sr','sp'];
+  order.forEach(k=>{
+    if(m[k]!=null&&m[k]!==''){
+      let v=String(m[k]);
+      if(k==='lk'&&(v.startsWith('http://')||v.startsWith('https://')))
+        v='<a href="'+escH(v)+'" target="_blank" rel="noopener noreferrer">Abrir link &nearr;</a>';
+      else v=escH(v);
+      h+='<div class="f"><strong>'+(FL[k]||k)+'</strong><span>'+v+'</span></div>';
+    }
+  });
+  document.getElementById('modal-content').innerHTML=h;
+}
+function closeModal(){document.getElementById('modal').classList.remove('open');}
+
+// ── EXPORT CSV ────────────────────────────────────────────────────────────
+function exportCSV(){
+  const f=_filtered;
+  if(!f.length){alert('Nenhum registro filtrado para exportar.');return;}
+  const cols=['id','t','a','ano','tp','inst','rg','kw','sc','st','pr','et'];
+  const header=cols.map(c=>FL[c]||c).join(';');
+  const rows=f.map(d=>cols.map(c=>{
+    let v=(c==='ex'?(d.ex||[]).join('|'):(d[c]??''));
+    return '"'+String(v).replace(/"/g,'""')+'"';
+  }).join(';'));
+  const blob=new Blob(['﻿'+[header,...rows].join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='estado-arte-'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();URL.revokeObjectURL(a.href);
+}
+
+// ── URL STATE ─────────────────────────────────────────────────────────────
+function saveFiltersToURL(){
+  const p=new URLSearchParams();
+  [['busca','q'],['filtro-eixo','eixo'],['filtro-ano','ano'],['filtro-tipo','tipo'],['filtro-regiao','regiao'],['filtro-inst','inst']].forEach(([id,key])=>{
+    const v=document.getElementById(id).value;if(v)p.set(key,v);
+  });
+  const sc=document.getElementById('filtro-score').value;
+  if(sc>'0')p.set('score',sc);
+  history.replaceState(null,'',location.pathname+(p.toString()?'?'+p.toString():''));
+}
+
+function loadFiltersFromURL(){
+  const p=new URLSearchParams(location.search);
+  [['q','busca'],['eixo','filtro-eixo'],['ano','filtro-ano'],['tipo','filtro-tipo'],['regiao','filtro-regiao'],['inst','filtro-inst']].forEach(([key,id])=>{
+    const v=p.get(key);if(v)document.getElementById(id).value=v;
+  });
+  const sc=p.get('score');
+  if(sc){document.getElementById('filtro-score').value=sc;document.getElementById('score-val').textContent=sc;}
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────
+function escId(s){return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
+function escH(t){const d=document.createElement('div');d.textContent=String(t);return d.innerHTML;}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+init();
+</script>
+</body>
+</html>
